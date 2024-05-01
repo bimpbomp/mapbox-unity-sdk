@@ -731,9 +731,9 @@ PlayerSettings:
     Unity_Ads: 0
   facebookSdkVersion: 7.9.4
   apiCompatibilityLevel: 2
-  cloudProjectId: f183eef4-72bf-420c-80e0-aaadeab22f30
-  projectName: Mapbox Unity SDK
-  organizationId: mapbox-inc
+  cloudProjectId: 
+  projectName: 
+  organizationId: 
   cloudEnabled: 0
   enableNativePlatformBackendsForNewInputSystem: 0
   disableOldInputManagerSupport: 0

@@ -1,52 +1,46 @@
+using Mapbox.Unity.Map;
+using Mapbox.VectorTile.ExtensionMethods;
+using UnityEditor;
+using UnityEngine;
+
 namespace Mapbox.Editor
 {
-	using UnityEngine;
-	using Mapbox.Unity.Map;
-	using UnityEditor;
-	using System;
-	using System.Collections.Generic;
-	using Mapbox.VectorTile.ExtensionMethods;
-
 	[CustomPropertyDrawer(typeof(PrefabItemOptions))]
 	public class PrefabItemOptionsDrawer : PropertyDrawer
 	{
+		private const string searchButtonContent = "Search";
 
-		static float _lineHeight = EditorGUIUtility.singleLineHeight;
-		const string searchButtonContent = "Search";
+		private static readonly float _lineHeight = EditorGUIUtility.singleLineHeight;
 
-		private GUIContent prefabLocationsTitle = new GUIContent
+		private readonly GUIContent categoriesDropDown = new()
 		{
-			text = "Prefab Locations",
-			tooltip = "Where on the map to spawn the selected prefab"
+			text = "Category", tooltip = "Spawn at locations in the categories selected"
 		};
 
-
-		private GUIContent findByDropDown = new GUIContent
-		{
-			text = "Find by",
-			tooltip = "Find points-of-interest by category, name, or address"
-		};
-
-		private GUIContent categoriesDropDown = new GUIContent
-		{
-			text = "Category",
-			tooltip = "Spawn at locations in the categories selected"
-		};
-
-		private GUIContent densitySlider = new GUIContent
+		private readonly GUIContent densitySlider = new()
 		{
 			text = "Density",
 			tooltip = "The number of prefabs to spawn per-tile; try a lower number if the map is cluttered"
 		};
 
-		private GUIContent nameField = new GUIContent
+
+		private readonly GUIContent findByDropDown = new()
 		{
-			text = "Name",
-			tooltip = "Spawn at locations containing this name string"
+			text = "Find by", tooltip = "Find points-of-interest by category, name, or address"
 		};
 
-		GUIContent[] findByPropContent;
-		bool isGUIContentSet = false;
+		private GUIContent[] findByPropContent;
+		private bool isGUIContentSet;
+
+		private readonly GUIContent nameField = new()
+		{
+			text = "Name", tooltip = "Spawn at locations containing this name string"
+		};
+
+		private readonly GUIContent prefabLocationsTitle = new()
+		{
+			text = "Prefab Locations", tooltip = "Where on the map to spawn the selected prefab"
+		};
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -72,46 +66,40 @@ namespace Mapbox.Editor
 			var findByProp = property.FindPropertyRelative("findByType");
 
 			var displayNames = findByProp.enumDisplayNames;
-			int count = findByProp.enumDisplayNames.Length;
+			var count = findByProp.enumDisplayNames.Length;
 			if (!isGUIContentSet)
 			{
 				findByPropContent = new GUIContent[count];
-				for (int extIdx = 0; extIdx < count; extIdx++)
-				{
+				for (var extIdx = 0; extIdx < count; extIdx++)
 					findByPropContent[extIdx] = new GUIContent
 					{
-						text = displayNames[extIdx],
-						tooltip = ((LocationPrefabFindBy)extIdx).Description(),
+						text = displayNames[extIdx], tooltip = ((LocationPrefabFindBy)extIdx).Description()
 					};
-				}
 				isGUIContentSet = true;
 			}
 
 			EditorGUI.indentLevel++;
 
 			EditorGUI.BeginChangeCheck();
-			findByProp.enumValueIndex = EditorGUILayout.Popup(findByDropDown, findByProp.enumValueIndex, findByPropContent);
-			if (EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			findByProp.enumValueIndex =
+				EditorGUILayout.Popup(findByDropDown, findByProp.enumValueIndex, findByPropContent);
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 
 			EditorGUILayout.EndHorizontal();
 
 			switch ((LocationPrefabFindBy)findByProp.enumValueIndex)
 			{
-				case (LocationPrefabFindBy.MapboxCategory):
+				case LocationPrefabFindBy.MapboxCategory:
 					ShowCategoryOptions(property);
 					break;
-				case (LocationPrefabFindBy.AddressOrLatLon):
+				case LocationPrefabFindBy.AddressOrLatLon:
 					ShowAddressOrLatLonUI(property);
 					break;
-				case (LocationPrefabFindBy.POIName):
+				case LocationPrefabFindBy.POIName:
 					ShowPOINames(property);
 					break;
-				default:
-					break;
 			}
+
 			EditorGUI.indentLevel--;
 		}
 
@@ -120,11 +108,9 @@ namespace Mapbox.Editor
 			//Category drop down
 			EditorGUI.BeginChangeCheck();
 			var categoryProp = property.FindPropertyRelative("categories");
-			categoryProp.intValue = (int)(LocationPrefabCategories)(EditorGUILayout.EnumFlagsField(categoriesDropDown, (LocationPrefabCategories)categoryProp.intValue));
-			if (EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			categoryProp.intValue = (int)(LocationPrefabCategories)EditorGUILayout.EnumFlagsField(categoriesDropDown,
+				(LocationPrefabCategories)categoryProp.intValue);
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 			ShowDensitySlider(property);
 		}
 
@@ -133,49 +119,48 @@ namespace Mapbox.Editor
 			//EditorGUILayout.BeginVertical();
 			var coordinateProperties = property.FindPropertyRelative("coordinates");
 
-			for (int i = 0; i < coordinateProperties.arraySize; i++)
+			for (var i = 0; i < coordinateProperties.arraySize; i++)
 			{
 				EditorGUILayout.BeginHorizontal();
 				//get the element to draw
 				var coordinate = coordinateProperties.GetArrayElementAtIndex(i);
 
 				//label for each location.
-				var coordinateLabel = String.Format("Location {0}", i);
+				var coordinateLabel = string.Format("Location {0}", i);
 
 				// draw coordinate string.
 				EditorGUI.BeginChangeCheck();
 				coordinate.stringValue = EditorGUILayout.TextField(coordinateLabel, coordinate.stringValue);
 
-				if(EditorGUI.EndChangeCheck())
-				{
-					EditorHelper.CheckForModifiedProperty(property, true);
-				}
+				if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property, true);
 				// draw search button.
-				if (GUILayout.Button(new GUIContent(searchButtonContent), (GUIStyle)"minibuttonleft", GUILayout.MaxWidth(100)))
+				if (GUILayout.Button(new GUIContent(searchButtonContent), "minibuttonleft", GUILayout.MaxWidth(100)))
 				{
-					object propertyObject = EditorHelper.GetTargetObjectOfProperty(property);
+					var propertyObject = EditorHelper.GetTargetObjectOfProperty(property);
 					GeocodeAttributeSearchWindow.Open(coordinate, propertyObject);
 				}
 
 				//include a remove button in the row
-				if (GUILayout.Button(new GUIContent(" X "), (GUIStyle)"minibuttonright", GUILayout.MaxWidth(30)))
+				if (GUILayout.Button(new GUIContent(" X "), "minibuttonright", GUILayout.MaxWidth(30)))
 				{
 					coordinateProperties.DeleteArrayElementAtIndex(i);
 					EditorHelper.CheckForModifiedProperty(property);
 				}
+
 				EditorGUILayout.EndHorizontal();
 			}
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.Space(EditorGUIUtility.labelWidth - 3);
 
-			if (GUILayout.Button(new GUIContent("Add Location"), (GUIStyle)"minibutton"))
+			if (GUILayout.Button(new GUIContent("Add Location"), "minibutton"))
 			{
 				coordinateProperties.arraySize++;
 				var newElement = coordinateProperties.GetArrayElementAtIndex(coordinateProperties.arraySize - 1);
 				newElement.stringValue = "";
 				EditorHelper.CheckForModifiedProperty(property);
 			}
+
 			EditorGUILayout.EndHorizontal();
 		}
 
@@ -187,10 +172,7 @@ namespace Mapbox.Editor
 
 			EditorGUI.BeginChangeCheck();
 			categoryProp.stringValue = EditorGUILayout.TextField(nameField, categoryProp.stringValue);
-			if (EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 
 			ShowDensitySlider(property);
 		}
@@ -202,10 +184,7 @@ namespace Mapbox.Editor
 
 			EditorGUI.BeginChangeCheck();
 			EditorGUILayout.PropertyField(densityProp, densitySlider);
-			if (EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 			GUI.enabled = true;
 			densityProp.serializedObject.ApplyModifiedProperties();
 		}

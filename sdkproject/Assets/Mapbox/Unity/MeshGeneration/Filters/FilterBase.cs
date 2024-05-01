@@ -1,9 +1,7 @@
+using Mapbox.Unity.MeshGeneration.Data;
+
 namespace Mapbox.Unity.MeshGeneration.Filters
 {
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
-	using System;
-
 	public interface ILayerFeatureFilterComparer
 	{
 		bool Try(VectorFeatureUnity feature);
@@ -11,7 +9,7 @@ namespace Mapbox.Unity.MeshGeneration.Filters
 
 	public class FilterBase : ILayerFeatureFilterComparer
 	{
-		public virtual string Key { get { return ""; } }
+		public virtual string Key => "";
 
 		public virtual bool Try(VectorFeatureUnity feature)
 		{
@@ -20,7 +18,6 @@ namespace Mapbox.Unity.MeshGeneration.Filters
 
 		public virtual void Initialize()
 		{
-
 		}
 	}
 }

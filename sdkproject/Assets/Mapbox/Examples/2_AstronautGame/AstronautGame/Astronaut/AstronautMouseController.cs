@@ -1,74 +1,63 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Mapbox.Unity.Map;
+using UnityEngine;
 
 namespace Mapbox.Examples
 {
 	public class AstronautMouseController : MonoBehaviour
 	{
-		[Header("Character")]
-		[SerializeField]
-		GameObject character;
-		[SerializeField]
-		float characterSpeed;
-		[SerializeField]
-		Animator characterAnimator;
+		[Header("Character")] [SerializeField] private GameObject character;
 
-		[Header("References")]
-		[SerializeField]
-		AstronautDirections directions;
-		[SerializeField]
-		Transform startPoint;
-		[SerializeField]
-		Transform endPoint;
-		[SerializeField]
-		AbstractMap map;
-		[SerializeField]
-		GameObject rayPlane;
-		[SerializeField]
-		Transform _movementEndPoint;
+		[SerializeField] private float characterSpeed;
 
-		[SerializeField]
-		LayerMask layerMask;
+		[SerializeField] private Animator characterAnimator;
 
-		Ray ray;
-		RaycastHit hit;
-		LayerMask raycastPlane;
-		float clicktime;
-		bool moving;
-		bool characterDisabled;
+		[Header("References")] [SerializeField]
+		private AstronautDirections directions;
 
-		void Start()
+		[SerializeField] private Transform startPoint;
+
+		[SerializeField] private Transform endPoint;
+
+		[SerializeField] private AbstractMap map;
+
+		[SerializeField] private GameObject rayPlane;
+
+		[SerializeField] private Transform _movementEndPoint;
+
+		[SerializeField] private LayerMask layerMask;
+
+		private bool characterDisabled;
+		private float clicktime;
+		private RaycastHit hit;
+		private bool moving;
+
+		private Ray ray;
+		private LayerMask raycastPlane;
+
+		private void Start()
 		{
 			characterAnimator = GetComponentInChildren<Animator>();
 			if (!Application.isEditor)
 			{
-				this.enabled = false;
-				return;
+				enabled = false;
 			}
 		}
 
-		void Update()
+		private void Update()
 		{
 			if (characterDisabled)
 				return;
 
 			CamControl();
 
-			bool click = false;
+			var click = false;
 
-			if (Input.GetMouseButtonDown(0))
-			{
-				clicktime = Time.time;
-			}
+			if (Input.GetMouseButtonDown(0)) clicktime = Time.time;
 			if (Input.GetMouseButtonUp(0))
-			{
 				if (Time.time - clicktime < 0.15f)
-				{
 					click = true;
-				}
-			}
 
 			if (click)
 			{
@@ -85,17 +74,35 @@ namespace Mapbox.Examples
 			}
 		}
 
+		#region Character : Rotation
+
+		private IEnumerator LookAtNextPos()
+		{
+			var neededRotation = Quaternion.LookRotation(nextPos - character.transform.position);
+			var thisRotation = character.transform.localRotation;
+
+			float t = 0;
+			while (t < 1.0f)
+			{
+				t += Time.deltaTime / 0.25f;
+				var rotationValue = Quaternion.Slerp(thisRotation, neededRotation, t);
+				character.transform.rotation = Quaternion.Euler(0, rotationValue.eulerAngles.y, 0);
+				yield return null;
+			}
+		}
+
+		#endregion
+
 		#region Character : Movement
-		List<Vector3> futurePositions;
-		bool interruption;
-		void GetPositions(List<Vector3> vecs)
+
+		private List<Vector3> futurePositions;
+		private bool interruption;
+
+		private void GetPositions(List<Vector3> vecs)
 		{
 			futurePositions = vecs;
 
-			if (futurePositions != null && moving)
-			{
-				interruption = true;
-			}
+			if (futurePositions != null && moving) interruption = true;
 			if (!moving)
 			{
 				interruption = false;
@@ -103,8 +110,9 @@ namespace Mapbox.Examples
 			}
 		}
 
-		Vector3 nextPos;
-		void MoveToNextPlace()
+		private Vector3 nextPos;
+
+		private void MoveToNextPlace()
 		{
 			if (futurePositions.Count > 0)
 			{
@@ -122,12 +130,13 @@ namespace Mapbox.Examples
 			}
 		}
 
-		Vector3 prevPos;
-		IEnumerator MoveTo()
+		private Vector3 prevPos;
+
+		private IEnumerator MoveTo()
 		{
 			prevPos = transform.localPosition;
 
-			float time = CalculateTime();
+			var time = CalculateTime();
 			float t = 0;
 
 			StartCoroutine(LookAtNextPos());
@@ -145,7 +154,7 @@ namespace Mapbox.Examples
 			MoveToNextPlace();
 		}
 
-		float CalculateTime()
+		private float CalculateTime()
 		{
 			float timeToMove = 0;
 
@@ -153,42 +162,29 @@ namespace Mapbox.Examples
 
 			return timeToMove;
 		}
-		#endregion
 
-		#region Character : Rotation
-		IEnumerator LookAtNextPos()
-		{
-			Quaternion neededRotation = Quaternion.LookRotation(nextPos - character.transform.position);
-			Quaternion thisRotation = character.transform.localRotation;
-
-			float t = 0;
-			while (t < 1.0f)
-			{
-				t += Time.deltaTime / 0.25f;
-				var rotationValue = Quaternion.Slerp(thisRotation, neededRotation, t);
-				character.transform.rotation = Quaternion.Euler(0, rotationValue.eulerAngles.y, 0);
-				yield return null;
-			}
-		}
 		#endregion
 
 		#region CameraControl
-		[Header("CameraSettings")]
-		[SerializeField]
-		Camera cam;
-		Vector3 previousPos = Vector3.zero;
-		Vector3 deltaPos = Vector3.zero;
 
-		void CamControl()
+		[Header("CameraSettings")] [SerializeField]
+		private Camera cam;
+
+		private Vector3 previousPos = Vector3.zero;
+		private Vector3 deltaPos = Vector3.zero;
+
+		private void CamControl()
 		{
 			deltaPos = transform.position - previousPos;
 			deltaPos.y = 0;
 			cam.transform.position = Vector3.Lerp(cam.transform.position, cam.transform.position + deltaPos, Time.time);
 			previousPos = transform.position;
 		}
+
 		#endregion
 
 		#region Utility
+
 		public void DisableCharacter()
 		{
 			characterDisabled = true;
@@ -213,11 +209,12 @@ namespace Mapbox.Examples
 			Debug.Log("CLOSE");
 		}
 
-		void MovementEndpointControl(Vector3 pos, bool active)
+		private void MovementEndpointControl(Vector3 pos, bool active)
 		{
 			_movementEndPoint.position = new Vector3(pos.x, 0.2f, pos.z);
 			_movementEndPoint.gameObject.SetActive(active);
 		}
+
 		#endregion
 	}
 }

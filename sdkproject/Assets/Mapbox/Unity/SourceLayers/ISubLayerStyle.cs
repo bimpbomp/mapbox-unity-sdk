@@ -4,7 +4,4 @@
 	{
 		void SetAsStyle();
 	}
-
 }
-
-

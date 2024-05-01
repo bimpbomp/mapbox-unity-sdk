@@ -7,23 +7,23 @@ namespace WoLfulus.LineEnding
     [InitializeOnLoad]
     public static class LogEntries
     {
-        private static Type _type;
+        private static readonly Type _type;
 
-        private static PropertyInfo _consoleFlags;
-        private static MethodInfo _SetConsoleFlag;
-        private static MethodInfo _RowGotDoubleClicked;
-        private static MethodInfo _GetStatusText;
-        private static MethodInfo _GetStatusMask;
-        private static MethodInfo _StartGettingEntries;
-        private static MethodInfo _EndGettingEntries;
-        private static MethodInfo _GetFirstTwoLinesEntryTextAndModeInternal;
-        private static MethodInfo _GetEntryCount;
-        private static MethodInfo _GetEntryInternal;
-        private static MethodInfo _GetCount;
-        private static MethodInfo _GetCountsByType;
-        private static MethodInfo _GetStatusViewErrorIndex;
-        private static MethodInfo _ClickStatusBar;
-        private static MethodInfo _Clear;
+        private static readonly PropertyInfo _consoleFlags;
+        private static readonly MethodInfo _SetConsoleFlag;
+        private static readonly MethodInfo _RowGotDoubleClicked;
+        private static readonly MethodInfo _GetStatusText;
+        private static readonly MethodInfo _GetStatusMask;
+        private static readonly MethodInfo _StartGettingEntries;
+        private static readonly MethodInfo _EndGettingEntries;
+        private static readonly MethodInfo _GetFirstTwoLinesEntryTextAndModeInternal;
+        private static readonly MethodInfo _GetEntryCount;
+        private static readonly MethodInfo _GetEntryInternal;
+        private static readonly MethodInfo _GetCount;
+        private static readonly MethodInfo _GetCountsByType;
+        private static readonly MethodInfo _GetStatusViewErrorIndex;
+        private static readonly MethodInfo _ClickStatusBar;
+        private static readonly MethodInfo _Clear;
 
 
         static LogEntries()
@@ -32,12 +32,10 @@ namespace WoLfulus.LineEnding
 
             if (_type == null)
             {
-                Assembly assembly = Assembly.GetAssembly(typeof(Editor));
+                var assembly = Assembly.GetAssembly(typeof(Editor));
                 _type = assembly.GetType("UnityEditorInternal.LogEntries");
                 if (_type == null) // 2017 Fix
-                {
                     _type = assembly.GetType("UnityEditor.LogEntries");
-                }
 
                 _consoleFlags = _type.GetProperty("consoleFlags", flags);
                 _SetConsoleFlag = _type.GetMethod("SetConsoleFlag", flags);
@@ -50,7 +48,8 @@ namespace WoLfulus.LineEnding
                 _StartGettingEntries = _type.GetMethod("StartGettingEntries", flags);
                 _EndGettingEntries = _type.GetMethod("EndGettingEntries", flags);
 
-                _GetFirstTwoLinesEntryTextAndModeInternal = _type.GetMethod("GetFirstTwoLinesEntryTextAndModeInternal", flags);
+                _GetFirstTwoLinesEntryTextAndModeInternal =
+                    _type.GetMethod("GetFirstTwoLinesEntryTextAndModeInternal", flags);
 
                 _GetEntryCount = _type.GetMethod("GetEntryCount", flags);
                 _GetEntryInternal = _type.GetMethod("GetEntryInternal", flags);
@@ -67,14 +66,8 @@ namespace WoLfulus.LineEnding
 
         public static int consoleFlags
         {
-            get
-            {
-                return (int)_consoleFlags.GetValue(null, null);
-            }
-            set
-            {
-                _consoleFlags.SetValue(null, value, null);
-            }
+            get => (int)_consoleFlags.GetValue(null, null);
+            set => _consoleFlags.SetValue(null, value, null);
         }
 
         public static void RowGotDoubleClicked(int index)

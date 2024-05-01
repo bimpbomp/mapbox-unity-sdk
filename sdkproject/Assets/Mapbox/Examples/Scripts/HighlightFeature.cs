@@ -1,17 +1,17 @@
-﻿namespace Mapbox.Examples
-{
-	using UnityEngine;
-	using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class HighlightFeature : MonoBehaviour
 	{
-		static Material _highlightMaterial;
+		private static Material _highlightMaterial;
 
-		private List<Material> _materials = new List<Material>();
+		private readonly List<Material> _materials = new();
 
-		MeshRenderer _meshRenderer;
+		private MeshRenderer _meshRenderer;
 
-		void Start()
+		private void Start()
 		{
 			if (_highlightMaterial == null)
 			{
@@ -20,11 +20,8 @@
 			}
 
 			_meshRenderer = GetComponent<MeshRenderer>();
-			
-			foreach (var item in _meshRenderer.sharedMaterials)
-			{
-				_materials.Add(item);
-			}
+
+			foreach (var item in _meshRenderer.sharedMaterials) _materials.Add(item);
 		}
 
 		public void OnMouseEnter()

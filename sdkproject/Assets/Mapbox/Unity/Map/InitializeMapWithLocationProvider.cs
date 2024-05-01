@@ -1,16 +1,15 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System.Collections;
-	using Mapbox.Unity.Location;
-	using UnityEngine;
+﻿using System.Collections;
+using Mapbox.Unity.Location;
+using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	public class InitializeMapWithLocationProvider : MonoBehaviour
 	{
-		[SerializeField]
-		AbstractMap _map;
+		[SerializeField] private AbstractMap _map;
 
-		ILocationProvider _locationProvider;
-    
+		private ILocationProvider _locationProvider;
+
 		private void Awake()
 		{
 			// Prevent double initialization of the map. 
@@ -21,10 +20,11 @@
 		{
 			yield return null;
 			_locationProvider = LocationProviderFactory.Instance.DefaultLocationProvider;
-			_locationProvider.OnLocationUpdated += LocationProvider_OnLocationUpdated; ;
+			_locationProvider.OnLocationUpdated += LocationProvider_OnLocationUpdated;
+			;
 		}
 
-		void LocationProvider_OnLocationUpdated(Unity.Location.Location location)
+		private void LocationProvider_OnLocationUpdated(Location.Location location)
 		{
 			_locationProvider.OnLocationUpdated -= LocationProvider_OnLocationUpdated;
 			_map.Initialize(location.LatitudeLongitude, _map.AbsoluteZoom);

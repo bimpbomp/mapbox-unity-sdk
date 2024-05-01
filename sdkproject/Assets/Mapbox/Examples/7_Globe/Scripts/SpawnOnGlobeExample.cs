@@ -1,27 +1,20 @@
-﻿namespace Mapbox.Examples
-{
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Factories;
-	using Mapbox.Unity.Utilities;
-	using Mapbox.Unity.MeshGeneration.Factories.TerrainStrategies;
-	using Mapbox.Unity.Map;
+﻿using Mapbox.Unity.Map;
+using Mapbox.Unity.Utilities;
+using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class SpawnOnGlobeExample : MonoBehaviour
 	{
-		[SerializeField]
-		AbstractMap _map;
+		[SerializeField] private AbstractMap _map;
 
-		[SerializeField]
-		[Geocode]
-		string[] _locations;
+		[SerializeField] [Geocode] private string[] _locations;
 
-		[SerializeField]
-		float _spawnScale = 100f;
+		[SerializeField] private float _spawnScale = 100f;
 
-		[SerializeField]
-		GameObject _markerPrefab;
+		[SerializeField] private GameObject _markerPrefab;
 
-		void Start()
+		private void Start()
 		{
 			foreach (var locationString in _locations)
 			{

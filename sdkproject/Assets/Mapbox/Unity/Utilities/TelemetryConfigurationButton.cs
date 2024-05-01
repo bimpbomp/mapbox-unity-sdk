@@ -1,20 +1,19 @@
-﻿namespace Mapbox.Unity.Utilities
-{
-	using UnityEngine;
-	using UnityEngine.UI;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
+namespace Mapbox.Unity.Utilities
+{
 	[RequireComponent(typeof(Button))]
 	public class TelemetryConfigurationButton : MonoBehaviour
 	{
-		[SerializeField]
-		bool _booleanValue;
+		[SerializeField] private bool _booleanValue;
 
 		protected virtual void Awake()
 		{
 			GetComponent<Button>().onClick.AddListener(SetPlayerPref);
 		}
 
-		void SetPlayerPref()
+		private void SetPlayerPref()
 		{
 			MapboxAccess.Instance.SetLocationCollectionState(_booleanValue);
 			PlayerPrefs.Save();

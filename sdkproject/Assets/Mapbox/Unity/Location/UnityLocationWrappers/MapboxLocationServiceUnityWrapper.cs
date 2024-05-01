@@ -1,23 +1,19 @@
+using UnityEngine;
+
 namespace Mapbox.Unity.Location
 {
-
-
-	using UnityEngine;
-
-
 	/// <summary>
-	/// Wrap Unity's LocationService into MapboxLocationService
+	///     Wrap Unity's LocationService into MapboxLocationService
 	/// </summary>
 	public class MapboxLocationServiceUnityWrapper : IMapboxLocationService
 	{
-
-		public bool isEnabledByUser { get { return Input.location.isEnabledByUser; } }
-
-
-		public LocationServiceStatus status { get { return Input.location.status; } }
+		public bool isEnabledByUser => Input.location.isEnabledByUser;
 
 
-		public IMapboxLocationInfo lastData { get { return new MapboxLocationInfoUnityWrapper(Input.location.lastData); } }
+		public LocationServiceStatus status => Input.location.status;
+
+
+		public IMapboxLocationInfo lastData => new MapboxLocationInfoUnityWrapper(Input.location.lastData);
 
 
 		public void Start(float desiredAccuracyInMeters, float updateDistanceInMeters)
@@ -30,8 +26,5 @@ namespace Mapbox.Unity.Location
 		{
 			Input.location.Stop();
 		}
-
-
-
 	}
 }

@@ -5,21 +5,20 @@
 //-----------------------------------------------------------------------
 
 
-namespace Mapbox.Platform {
+using Mapbox.Unity.Utilities;
 
-	using Mapbox.Unity.Utilities;
-
-
+namespace Mapbox.Platform
+{
 	/// <summary> A handle to an asynchronous request. </summary>
-	public interface IAsyncRequest {
-
+	public interface IAsyncRequest
+	{
 		/// <summary> True after the request has finished. </summary>
 		bool IsCompleted { get; }
 
-		/// <summary> Cancel the ongoing request, preventing it from firing a callback. </summary>
-		void Cancel();
-
 		/// <summary>Type of request: GET, HEAD, ...</summary>
 		HttpRequestType RequestType { get; }
+
+		/// <summary> Cancel the ongoing request, preventing it from firing a callback. </summary>
+		void Cancel();
 	}
 }

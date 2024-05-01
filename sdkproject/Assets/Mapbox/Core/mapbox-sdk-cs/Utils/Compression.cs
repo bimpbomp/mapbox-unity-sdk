@@ -4,13 +4,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.IO;
+using Mapbox.IO.Compression;
+
 namespace Mapbox.Utils
 {
-
-	using System.IO;
-	using Mapbox.IO.Compression;
-
-
 	/// <summary> Collection of constants used across the project. </summary>
 	public static class Compression
 	{
@@ -27,19 +25,16 @@ namespace Mapbox.Utils
 		public static byte[] Decompress(byte[] buffer)
 		{
 			// Test for magic bits.
-			if (buffer.Length < 2 || buffer[0] != 0x1f || buffer[1] != 0x8b)
-			{
-				return buffer;
-			}
+			if (buffer.Length < 2 || buffer[0] != 0x1f || buffer[1] != 0x8b) return buffer;
 
-			using (GZipStream stream = new GZipStream(new MemoryStream(buffer), CompressionMode.Decompress))
+			using (var stream = new GZipStream(new MemoryStream(buffer), CompressionMode.Decompress))
 			{
 				const int Size = 4096; // Pagesize.
-				byte[] buf = new byte[Size];
+				var buf = new byte[Size];
 
-				using (MemoryStream memory = new MemoryStream())
+				using (var memory = new MemoryStream())
 				{
-					int count = 0;
+					var count = 0;
 
 					do
 					{
@@ -55,12 +50,8 @@ namespace Mapbox.Utils
 							return buffer;
 						}
 
-						if (count > 0)
-						{
-							memory.Write(buf, 0, count);
-						}
-					}
-					while (count > 0);
+						if (count > 0) memory.Write(buf, 0, count);
+					} while (count > 0);
 
 					buffer = memory.ToArray();
 				}
@@ -72,31 +63,28 @@ namespace Mapbox.Utils
 
 		public static byte[] Compress(byte[] raw, CompressionLevel compressionLevel)
 		{
-			using (MemoryStream memory = new MemoryStream())
+			using (var memory = new MemoryStream())
 			{
-				using (GZipStream gzip = new GZipStream(memory, compressionLevel))
+				using (var gzip = new GZipStream(memory, compressionLevel))
 				{
 					gzip.Write(raw, 0, raw.Length);
 				}
+
 				return memory.ToArray();
 			}
 		}
 
 		public static byte[] CompressModeCompress(byte[] raw)
 		{
-			using (MemoryStream memory = new MemoryStream())
+			using (var memory = new MemoryStream())
 			{
-				using (GZipStream gzip = new GZipStream(memory, CompressionMode.Compress, true))
+				using (var gzip = new GZipStream(memory, CompressionMode.Compress, true))
 				{
 					gzip.Write(raw, 0, raw.Length);
 				}
+
 				return memory.ToArray();
 			}
 		}
-
-
-
-
-
 	}
 }

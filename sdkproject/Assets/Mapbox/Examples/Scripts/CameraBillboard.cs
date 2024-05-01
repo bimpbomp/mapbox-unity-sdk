@@ -1,7 +1,7 @@
-﻿namespace Mapbox.Examples
-{
-	using UnityEngine;
+﻿using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class CameraBillboard : MonoBehaviour
 	{
 		public Camera _camera;
@@ -11,9 +11,10 @@
 			_camera = Camera.main;
 		}
 
-		void Update()
+		private void Update()
 		{
-			transform.LookAt(transform.position + _camera.transform.rotation * Vector3.forward, _camera.transform.rotation * Vector3.up);
+			transform.LookAt(transform.position + _camera.transform.rotation * Vector3.forward,
+				_camera.transform.rotation * Vector3.up);
 		}
 	}
 }

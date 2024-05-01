@@ -4,17 +4,14 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
-
 	[TestFixture]
 	internal class Vector2dTest
 	{
-
 		[SetUp]
 		public void SetUp()
 		{
@@ -35,7 +32,5 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			var lngLat = new Vector2d(38.9165, -77.0295);
 			Assert.AreEqual("-77.02950,38.91650", lngLat.ToString());
 		}
-
-
 	}
 }

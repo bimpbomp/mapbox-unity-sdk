@@ -1,15 +1,15 @@
-﻿using Mapbox.Unity.Map.TileProviders;
+﻿using Mapbox.Unity.Map;
+using Mapbox.Unity.Map.TileProviders;
+using UnityEditor;
+using UnityEngine;
 
 namespace Mapbox.Editor
 {
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
 	[CustomPropertyDrawer(typeof(MapOptions))]
 	public class MapOptionsDrawer : PropertyDrawer
 	{
-		static float lineHeight = EditorGUIUtility.singleLineHeight;
-		bool showPosition = false;
+		private static readonly float lineHeight = EditorGUIUtility.singleLineHeight;
+		private bool showPosition;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -44,21 +44,21 @@ namespace Mapbox.Editor
 
 				position.y += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("placementOptions"));
 				EditorGUI.PropertyField(position, property.FindPropertyRelative("scalingOptions"));
-
 			}
-			EditorGUI.EndProperty();
 
+			EditorGUI.EndProperty();
 		}
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			// Reserve space for the total visible properties.
-			float height = 2.0f * lineHeight;
+			var height = 2.0f * lineHeight;
 			if (showPosition)
 			{
 				height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("placementOptions"));
 				height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("scalingOptions"));
 			}
+
 			height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("locationOptions"));
 			height += EditorGUI.GetPropertyHeight(property.FindPropertyRelative("extentOptions"));
 			return height;

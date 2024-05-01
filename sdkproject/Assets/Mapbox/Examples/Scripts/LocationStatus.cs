@@ -1,31 +1,27 @@
-﻿namespace Mapbox.Examples
-{
-	using Mapbox.Unity.Location;
-	using Mapbox.Utils;
-	using System.Collections;
-	using System.Collections.Generic;
-	using UnityEngine;
-	using UnityEngine.UI;
+﻿using Mapbox.Unity.Location;
+using Mapbox.Utils;
+using UnityEngine;
+using UnityEngine.UI;
 
+namespace Mapbox.Examples
+{
 	public class LocationStatus : MonoBehaviour
 	{
+		[SerializeField] private Text _statusText;
 
-		[SerializeField]
-		Text _statusText;
+		private AbstractLocationProvider _locationProvider;
 
-		private AbstractLocationProvider _locationProvider = null;
-		void Start()
+		private void Start()
 		{
 			if (null == _locationProvider)
-			{
-				_locationProvider = LocationProviderFactory.Instance.DefaultLocationProvider as AbstractLocationProvider;
-			}
+				_locationProvider =
+					LocationProviderFactory.Instance.DefaultLocationProvider as AbstractLocationProvider;
 		}
 
 
-		void Update()
+		private void Update()
 		{
-			Location currLoc = _locationProvider.CurrentLocation;
+			var currLoc = _locationProvider.CurrentLocation;
 
 			if (currLoc.IsLocationServiceInitializing)
 			{
@@ -40,16 +36,11 @@
 				else
 				{
 					if (currLoc.LatitudeLongitude.Equals(Vector2d.zero))
-					{
 						_statusText.text = "Waiting for location ....";
-					}
 					else
-					{
 						_statusText.text = string.Format("{0}", currLoc.LatitudeLongitude);
-					}
 				}
 			}
-
 		}
 	}
 }

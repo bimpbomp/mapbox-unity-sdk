@@ -1,18 +1,15 @@
-﻿using Mapbox.Map;
+﻿using System;
+using Mapbox.Map;
 using Mapbox.Unity;
 using Mapbox.Unity.Map;
 using Mapbox.Unity.MeshGeneration.Data;
-using Mapbox.Unity.MeshGeneration.Enums;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class DataFetcherParameters
 {
 	public CanonicalTileId canonicalTileId;
-	public string tilesetId;
 	public UnityTile tile;
+	public string tilesetId;
 }
 
 public class ImageDataFetcherParameters : DataFetcherParameters
@@ -26,8 +23,8 @@ public class TerrainDataFetcherParameters : DataFetcherParameters
 
 public class VectorDataFetcherParameters : DataFetcherParameters
 {
-	public bool useOptimizedStyle = false;
 	public Style style = null;
+	public bool useOptimizedStyle = false;
 }
 
 public abstract class DataFetcher : ScriptableObject
@@ -51,31 +48,23 @@ public class TerrainDataFetcher : DataFetcher
 	public override void FetchData(DataFetcherParameters parameters)
 	{
 		var terrainDataParameters = parameters as TerrainDataFetcherParameters;
-		if(terrainDataParameters == null)
-		{
-			return;
-		}
+		if (terrainDataParameters == null) return;
 		var pngRasterTile = new RawPngRasterTile();
-		if (terrainDataParameters.tile != null)
-		{
-			terrainDataParameters.tile.AddTile(pngRasterTile);
-		}
-		pngRasterTile.Initialize(_fileSource, terrainDataParameters.canonicalTileId, terrainDataParameters.tilesetId, () =>
-		{
-			if (terrainDataParameters.tile != null && terrainDataParameters.tile.CanonicalTileId != pngRasterTile.Id)
+		if (terrainDataParameters.tile != null) terrainDataParameters.tile.AddTile(pngRasterTile);
+		pngRasterTile.Initialize(_fileSource, terrainDataParameters.canonicalTileId, terrainDataParameters.tilesetId,
+			() =>
 			{
-				//this means tile object is recycled and reused. Returned data doesn't belong to this tile but probably the previous one. So we're trashing it.
-				return;
-			}
+				if (terrainDataParameters.tile != null &&
+				    terrainDataParameters.tile.CanonicalTileId != pngRasterTile.Id)
+					//this means tile object is recycled and reused. Returned data doesn't belong to this tile but probably the previous one. So we're trashing it.
+					return;
 
-			if (pngRasterTile.HasError)
-			{
-				FetchingError(terrainDataParameters.tile, pngRasterTile, new TileErrorEventArgs(terrainDataParameters.canonicalTileId, pngRasterTile.GetType(), null, pngRasterTile.Exceptions));
-			}
-			else
-			{
-				DataRecieved(terrainDataParameters.tile, pngRasterTile);
-			}
-		});
+				if (pngRasterTile.HasError)
+					FetchingError(terrainDataParameters.tile, pngRasterTile,
+						new TileErrorEventArgs(terrainDataParameters.canonicalTileId, pngRasterTile.GetType(), null,
+							pngRasterTile.Exceptions));
+				else
+					DataRecieved(terrainDataParameters.tile, pngRasterTile);
+			});
 	}
 }

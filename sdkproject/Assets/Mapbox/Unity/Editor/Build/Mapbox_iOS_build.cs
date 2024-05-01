@@ -30,7 +30,8 @@ namespace Mapbox.Editor.Build
 #endif
 
 				var defaultIncludePath = "Mapbox/Core/Plugins/iOS/MapboxMobileEvents/include";
-				var includePaths = Directory.GetDirectories(Application.dataPath, "include", SearchOption.AllDirectories);
+				var includePaths =
+ Directory.GetDirectories(Application.dataPath, "include", SearchOption.AllDirectories);
 				var includePath = includePaths
 					.Select(path => Regex.Replace(path, Application.dataPath + "/", ""))
 					.Where(path => path.EndsWith(defaultIncludePath, true, CultureInfo.InvariantCulture))

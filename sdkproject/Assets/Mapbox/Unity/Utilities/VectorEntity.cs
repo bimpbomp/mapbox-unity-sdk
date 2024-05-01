@@ -1,18 +1,14 @@
+using UnityEngine;
+
 namespace Mapbox.Unity.MeshGeneration.Data
 {
-	using Mapbox.Unity.MeshGeneration.Components;
-	using Mapbox.Unity.MeshGeneration.Data;
-	using System.Collections;
-	using System.Collections.Generic;
-	using UnityEngine;
-
 	public class VectorEntity
 	{
-		public GameObject GameObject;
-		public MeshFilter MeshFilter;
-		public Mesh Mesh;
-		public MeshRenderer MeshRenderer;
 		public VectorFeatureUnity Feature;
+		public GameObject GameObject;
+		public Mesh Mesh;
+		public MeshFilter MeshFilter;
+		public MeshRenderer MeshRenderer;
 		public Transform Transform;
 	}
 }

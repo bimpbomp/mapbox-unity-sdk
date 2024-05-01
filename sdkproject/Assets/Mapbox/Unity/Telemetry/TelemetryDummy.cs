@@ -2,14 +2,7 @@ namespace Mapbox.Unity.Telemetry
 {
 	public class TelemetryDummy : ITelemetryLibrary
 	{
-		static ITelemetryLibrary _instance = new TelemetryDummy();
-		public static ITelemetryLibrary Instance
-		{
-			get
-			{
-				return _instance;
-			}
-		}
+		public static ITelemetryLibrary Instance { get; } = new TelemetryDummy();
 
 		public void Initialize(string accessToken)
 		{

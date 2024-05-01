@@ -1,9 +1,9 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using Mapbox.Unity.MeshGeneration.Modifiers;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(MaterialList))]
 	public class MaterialListDrawer : PropertyDrawer
 	{
@@ -11,10 +11,7 @@
 		{
 			EditorGUI.BeginProperty(position, label, property);
 			var matArray = property.FindPropertyRelative("Materials");
-			if (matArray.arraySize == 0)
-			{
-				matArray.arraySize = 1;
-			}
+			if (matArray.arraySize == 0) matArray.arraySize = 1;
 			EditorGUILayout.PropertyField(property.FindPropertyRelative("Materials").GetArrayElementAtIndex(0), label);
 			EditorGUI.EndProperty();
 		}

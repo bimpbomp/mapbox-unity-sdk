@@ -1,14 +1,15 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using Mapbox.Unity.Utilities;
-	using Mapbox.Unity;
+﻿using Mapbox.Unity;
+using Mapbox.Unity.Utilities;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	/// <summary>
-	/// Custom property drawer for style searching. <para/>
-	/// Includes a search window to enable listing of styles associated with a username.
-	/// Requires a Mapbox token be set for the project.
+	///     Custom property drawer for style searching.
+	///     <para />
+	///     Includes a search window to enable listing of styles associated with a username.
+	///     Requires a Mapbox token be set for the project.
 	/// </summary>
 	[CustomPropertyDrawer(typeof(StyleSearchAttribute))]
 	public class StyleSearchAttributeDrawer : PropertyDrawer
@@ -16,7 +17,9 @@
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
-			EditorGUILayout.HelpBox("Style Id and Modified date is required for optimized tileset feature. You can copy&paste those values from Styles page under your Mapbox Account or use the search feature to fetch them automatically.", MessageType.Info);
+			EditorGUILayout.HelpBox(
+				"Style Id and Modified date is required for optimized tileset feature. You can copy&paste those values from Styles page under your Mapbox Account or use the search feature to fetch them automatically.",
+				MessageType.Info);
 			EditorGUI.indentLevel++;
 
 
@@ -38,10 +41,7 @@
 			}
 			else
 			{
-				if (GUILayout.Button("Search"))
-				{
-					StyleSearchWindow.Open(property);
-				}
+				if (GUILayout.Button("Search")) StyleSearchWindow.Open(property);
 			}
 
 			if (GUILayout.Button("Clear", GUILayout.Width(100)))
@@ -50,6 +50,7 @@
 				name.stringValue = "";
 				modified.stringValue = "";
 			}
+
 			EditorGUILayout.EndHorizontal();
 			EditorGUI.indentLevel--;
 		}

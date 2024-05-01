@@ -1,12 +1,9 @@
+using Mapbox.Unity.Location;
 
 namespace Mapbox.ProbeExtractorCs
 {
-
-	using Mapbox.Unity.Location;
-
-
 	/// <summary>
-	/// Represents a point of a GPS trace
+	///     Represents a point of a GPS trace
 	/// </summary>
 	public struct TracePoint
 	{
@@ -15,14 +12,16 @@ namespace Mapbox.ProbeExtractorCs
 		public double Longitude;
 		public double Bearing;
 		public float? Elevation;
+
 		/// <summary> Horizontal dilution of precision </summary>
 		public float? HDop;
+
 		/// <summary> Vertical dilution of precision</summary>
 		public float? VDop;
 
 		public static TracePoint FromLocation(Location location)
 		{
-			return new TracePoint()
+			return new TracePoint
 			{
 				Timestamp = (long)location.Timestamp,
 				Latitude = location.LatitudeLongitude.x,
@@ -35,7 +34,7 @@ namespace Mapbox.ProbeExtractorCs
 
 
 	/// <summary>
-	/// Represents a probe extracted by ProbeExtractor
+	///     Represents a probe extracted by ProbeExtractor
 	/// </summary>
 	public struct Probe
 	{
@@ -48,5 +47,4 @@ namespace Mapbox.ProbeExtractorCs
 		public double Distance;
 		public bool IsGood;
 	}
-
 }

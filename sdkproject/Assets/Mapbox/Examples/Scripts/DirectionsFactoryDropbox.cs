@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Mapbox.Directions;
+﻿using Mapbox.Directions;
 using Mapbox.Unity.MeshGeneration.Factories;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,17 +6,16 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Dropdown))]
 public class DirectionsFactoryDropbox : MonoBehaviour
 {
-    private DirectionsFactory _factory;
-    private Dropdown _dropdown;
+	private Dropdown _dropdown;
+	private DirectionsFactory _factory;
 
-    void Start()
-    {
-        _factory = FindObjectOfType<DirectionsFactory>();
-        _dropdown = GetComponent<Dropdown>();
-        if (_dropdown != null)
-        {
-            _dropdown.onValueChanged.AddListener((index) =>
-            {
+	private void Start()
+	{
+		_factory = FindObjectOfType<DirectionsFactory>();
+		_dropdown = GetComponent<Dropdown>();
+		if (_dropdown != null)
+			_dropdown.onValueChanged.AddListener(index =>
+			{
 				switch (index)
 				{
 					case 0:
@@ -31,7 +28,6 @@ public class DirectionsFactoryDropbox : MonoBehaviour
 						_factory.ChangeRoutingProfile(RoutingProfile.Cycling);
 						break;
 				}
-            });
-        }
-    }
+			});
+	}
 }

@@ -1,13 +1,13 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using Mapbox.Unity.MeshGeneration.Components;
+﻿using Mapbox.Unity.MeshGeneration.Components;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomEditor(typeof(FeatureBehaviour))]
-	public class FeatureBehaviourEditor : Editor
+	public class FeatureBehaviourEditor : UnityEditor.Editor
 	{
-		FeatureBehaviour _beh;
+		private FeatureBehaviour _beh;
 
 		public void OnEnable()
 		{
@@ -18,10 +18,7 @@
 		{
 			DrawDefaultInspector();
 
-			if (GUILayout.Button("Show Properties"))
-			{
-				_beh.ShowDebugData();
-			}
+			if (GUILayout.Button("Show Properties")) _beh.ShowDebugData();
 		}
 	}
 }

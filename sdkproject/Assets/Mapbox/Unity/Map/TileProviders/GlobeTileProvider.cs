@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Mapbox.Map;
 using Mapbox.Utils;
 
@@ -14,21 +15,16 @@ namespace Mapbox.Unity.Map.TileProviders
 		public override void UpdateTileExtent()
 		{
 			// HACK: don't allow too many tiles to be requested.
-			if (_map.AbsoluteZoom > 5)
-			{
-				throw new System.Exception("Too many tiles! Use a lower zoom level!");
-			}
+			if (_map.AbsoluteZoom > 5) throw new Exception("Too many tiles! Use a lower zoom level!");
 
 			var tileCover = TileCover.Get(Vector2dBounds.World(), _map.AbsoluteZoom);
-			foreach (var tile in tileCover)
-			{
-				_currentExtent.activeTiles.Add(new UnwrappedTileId(tile.Z, tile.X, tile.Y));
-			}
+			foreach (var tile in tileCover) _currentExtent.activeTiles.Add(new UnwrappedTileId(tile.Z, tile.X, tile.Y));
 			OnExtentChanged();
 		}
+
 		public override bool Cleanup(UnwrappedTileId tile)
 		{
-			return (!_currentExtent.activeTiles.Contains(tile));
+			return !_currentExtent.activeTiles.Contains(tile);
 		}
 	}
 }

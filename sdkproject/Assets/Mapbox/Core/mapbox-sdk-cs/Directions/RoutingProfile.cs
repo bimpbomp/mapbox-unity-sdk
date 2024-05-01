@@ -13,13 +13,13 @@ namespace Mapbox.Directions
 	public sealed class RoutingProfile
 	{
 		/// <summary> The driving profile. </summary>
-		public static readonly RoutingProfile Driving = new RoutingProfile("mapbox/driving/");
+		public static readonly RoutingProfile Driving = new("mapbox/driving/");
 
 		/// <summary> The walking profile. </summary>
-		public static readonly RoutingProfile Walking = new RoutingProfile("mapbox/walking/");
+		public static readonly RoutingProfile Walking = new("mapbox/walking/");
 
 		/// <summary> The cycling profile. </summary>
-		public static readonly RoutingProfile Cycling = new RoutingProfile("mapbox/cycling/");
+		public static readonly RoutingProfile Cycling = new("mapbox/cycling/");
 
 		private readonly string profile;
 
@@ -32,7 +32,7 @@ namespace Mapbox.Directions
 		/// <returns> A string to be appened to the direction query URL. </returns>
 		public override string ToString()
 		{
-			return this.profile;
+			return profile;
 		}
 	}
 }

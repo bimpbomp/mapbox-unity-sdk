@@ -3,42 +3,33 @@
 // procedural decoration like this.
 // A better approach would be to operate on the geometry itself.
 
+using System.Collections.Generic;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
+
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Mapbox.Unity.MeshGeneration.Components;
-	using UnityEngine;
-	using System.Collections.Generic;
-	using System;
-
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Spawn Inside Modifier")]
 	public class SpawnInsideModifier : GameObjectModifier
 	{
-		[SerializeField]
-		int _spawnRateInSquareMeters;
+		[SerializeField] private int _spawnRateInSquareMeters;
 
-		[SerializeField]
-		int _maxSpawn = 1000;
+		[SerializeField] private int _maxSpawn = 1000;
 
-		[SerializeField]
-		GameObject[] _prefabs;
+		[SerializeField] private GameObject[] _prefabs;
 
-		[SerializeField]
-		LayerMask _layerMask;
+		[SerializeField] private LayerMask _layerMask;
 
-		[SerializeField]
-		bool _scaleDownWithWorld;
+		[SerializeField] private bool _scaleDownWithWorld;
 
-		[SerializeField]
-		bool _randomizeScale;
+		[SerializeField] private bool _randomizeScale;
 
-		[SerializeField]
-		bool _randomizeRotation;
-
-		int _spawnedCount;
+		[SerializeField] private bool _randomizeRotation;
 
 		private Dictionary<GameObject, List<GameObject>> _objects;
 		private Queue<GameObject> _pool;
+
+		private int _spawnedCount;
 
 		public override void Initialize()
 		{
@@ -57,44 +48,38 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			center.y = 0;
 
 			var area = (int)(bounds.size.x * bounds.size.z);
-			int spawnCount = Mathf.Min(area / _spawnRateInSquareMeters, _maxSpawn);
+			var spawnCount = Mathf.Min(area / _spawnRateInSquareMeters, _maxSpawn);
 			while (_spawnedCount < spawnCount)
 			{
-				var x = UnityEngine.Random.Range(-bounds.extents.x, bounds.extents.x);
-				var z = UnityEngine.Random.Range(-bounds.extents.z, bounds.extents.z);
+				var x = Random.Range(-bounds.extents.x, bounds.extents.x);
+				var z = Random.Range(-bounds.extents.z, bounds.extents.z);
 				var ray = new Ray(center + new Vector3(x, 100, z), Vector3.down * 2000);
 
 				RaycastHit hit;
 				if (Physics.Raycast(ray, out hit, 150, _layerMask))
 				{
-					var index = UnityEngine.Random.Range(0, _prefabs.Length);
+					var index = Random.Range(0, _prefabs.Length);
 					var transform = GetObject(index, ve.GameObject).transform;
 					transform.position = hit.point;
-					if (_randomizeRotation)
-					{
-						transform.localEulerAngles = new Vector3(0, UnityEngine.Random.Range(-180f, 180f), 0);
-					}
-					if (!_scaleDownWithWorld)
-					{
-						transform.localScale = Vector3.one / tile.TileScale;
-					}
+					if (_randomizeRotation) transform.localEulerAngles = new Vector3(0, Random.Range(-180f, 180f), 0);
+					if (!_scaleDownWithWorld) transform.localScale = Vector3.one / tile.TileScale;
 
 					if (_randomizeScale)
 					{
 						var scale = transform.localScale;
-						var y = UnityEngine.Random.Range(scale.y * .7f, scale.y * 1.3f);
+						var y = Random.Range(scale.y * .7f, scale.y * 1.3f);
 						scale.y = y;
 						transform.localScale = scale;
 					}
-
 				}
+
 				_spawnedCount++;
 			}
 		}
 
 		public override void OnPoolItem(VectorEntity vectorEntity)
 		{
-			if(_objects.ContainsKey(vectorEntity.GameObject))
+			if (_objects.ContainsKey(vectorEntity.GameObject))
 			{
 				foreach (var item in _objects[vectorEntity.GameObject])
 				{
@@ -109,25 +94,14 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 		public override void Clear()
 		{
-			foreach (var go in _pool)
-			{
-				go.Destroy();
-			}
+			foreach (var go in _pool) go.Destroy();
 			_pool.Clear();
 			foreach (var tileObject in _objects)
-			{
-				foreach (var go in tileObject.Value)
-				{
-					if (Application.isEditor && !Application.isPlaying)
-					{
-						DestroyImmediate(go);
-					}
-					else
-					{
-						Destroy(go);
-					}
-				}
-			}
+			foreach (var go in tileObject.Value)
+				if (Application.isEditor && !Application.isPlaying)
+					DestroyImmediate(go);
+				else
+					Destroy(go);
 			_objects.Clear();
 		}
 
@@ -142,16 +116,13 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			}
 			else
 			{
-				ob = ((GameObject)Instantiate(_prefabs[index], go.transform, false));
+				ob = Instantiate(_prefabs[index], go.transform, false);
 			}
+
 			if (_objects.ContainsKey(go))
-			{
 				_objects[go].Add(ob);
-			}
 			else
-			{
-				_objects.Add(go, new List<GameObject>() { ob });
-			}
+				_objects.Add(go, new List<GameObject> { ob });
 			return ob;
 		}
 	}

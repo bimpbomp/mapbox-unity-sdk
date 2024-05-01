@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Mapbox.VectorTile.Geometry;
 using UnityEngine;
 
 namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
@@ -52,7 +51,8 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			return triangles;
 		}
 
-		private static void earcutLinked(Node ear, List<int> triangles, int dim, float minX, float minY, float size, int pass = 0)
+		private static void earcutLinked(Node ear, List<int> triangles, int dim, float minX, float minY, float size,
+			int pass = 0)
 		{
 			if (ear == null) return;
 
@@ -124,10 +124,10 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
 
 			// triangle bbox; min & max are calculated like this for speed
-			var minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x);
-			var minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y);
-			var maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x);
-			var maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
+			var minTX = a.x < b.x ? a.x < c.x ? a.x : c.x : b.x < c.x ? b.x : c.x;
+			var minTY = a.y < b.y ? a.y < c.y ? a.y : c.y : b.y < c.y ? b.y : c.y;
+			var maxTX = a.x > b.x ? a.x > c.x ? a.x : c.x : b.x > c.x ? b.x : c.x;
+			var maxTY = a.y > b.y ? a.y > c.y ? a.y : c.y : b.y > c.y ? b.y : c.y;
 
 			// z-order range for the current triangle bbox;
 			var minZ = zOrder(minTX, minTY, minX, minY, size);
@@ -139,8 +139,8 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			while (p != null && p.mZOrder <= maxZ)
 			{
 				if (p != ear.prev && p != ear.next &&
-					pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-					area(p.prev, p, p.next) >= 0) return false;
+				    pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+				    area(p.prev, p, p.next) >= 0) return false;
 				p = p.nextZ;
 			}
 
@@ -150,8 +150,8 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			while (p != null && p.mZOrder >= minZ)
 			{
 				if (p != ear.prev && p != ear.next &&
-					pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-					area(p.prev, p, p.next) >= 0) return false;
+				    pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+				    area(p.prev, p, p.next) >= 0) return false;
 				p = p.prevZ;
 			}
 
@@ -199,8 +199,10 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 						earcutLinked(c, triangles, dim, minX, minY, size);
 						return;
 					}
+
 					b = b.next;
 				}
+
 				a = a.next;
 			} while (a != start);
 		}
@@ -208,7 +210,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 		private static bool isValidDiagonal(Node a, Node b)
 		{
 			return a.next.i != b.i && a.prev.i != b.i && !intersectsPolygon(a, b) &&
-		   locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b);
+			       locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b);
 		}
 
 		private static bool middleInside(Node a, Node b)
@@ -220,8 +222,8 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 			do
 			{
-				if (((p.y > py) != (p.next.y > py)) && p.next.y != p.y &&
-						(px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
+				if (p.y > py != p.next.y > py && p.next.y != p.y &&
+				    px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x)
 					inside = !inside;
 				p = p.next;
 			} while (p != a);
@@ -235,7 +237,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			do
 			{
 				if (p.i != a.i && p.next.i != a.i && p.i != b.i && p.next.i != b.i &&
-						intersects(p, p.next, a, b)) return true;
+				    intersects(p, p.next, a, b)) return true;
 				p = p.next;
 			} while (p != a);
 
@@ -252,7 +254,6 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 				if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a))
 				{
-
 					triangles.Add(a.i / dim);
 					triangles.Add(p.i / dim);
 					triangles.Add(b.i / dim);
@@ -263,6 +264,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 					p = start = b;
 				}
+
 				p = p.next;
 			} while (p != start);
 
@@ -272,9 +274,9 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 		private static bool intersects(Node p1, Node q1, Node p2, Node q2)
 		{
 			if ((equals(p1, q1) && equals(p2, q2)) ||
-		(equals(p1, q2) && equals(p2, q1))) return true;
+			    (equals(p1, q2) && equals(p2, q1))) return true;
 			return area(p1, q1, p2) > 0 != area(p1, q1, q2) > 0 &&
-				   area(p2, q2, p1) > 0 != area(p2, q2, q1) > 0;
+			       area(p2, q2, p1) > 0 != area(p2, q2, q1) > 0;
 		}
 
 		private static bool isEar(Node ear)
@@ -291,7 +293,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			while (p != ear.prev)
 			{
 				if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-					area(p.prev, p, p.next) >= 0) return false;
+				    area(p.prev, p, p.next) >= 0) return false;
 				p = p.next;
 			}
 
@@ -322,7 +324,8 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			Node q;
 			Node e;
 			Node tail;
-			var numMerges = 0; ;
+			var numMerges = 0;
+			;
 			var pSize = 0;
 			var qSize = 0;
 			var inSize = 1;
@@ -345,11 +348,11 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 						q = q.nextZ;
 						if (q == null) break;
 					}
+
 					qSize = inSize;
 
 					while (pSize > 0 || (qSize > 0 && q != null))
 					{
-
 						if (pSize != 0 && (qSize == 0 || q == null || p.mZOrder <= q.mZOrder))
 						{
 							e = p;
@@ -375,7 +378,6 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 				tail.nextZ = null;
 				inSize *= 2;
-
 			} while (numMerges > 1);
 
 			return list;
@@ -398,10 +400,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 				queue.Add(getLeftmost(list));
 			}
 
-			queue.Sort(delegate (Node a, Node b)
-			{
-				return (int)Math.Ceiling(a.x - b.x);
-			});
+			queue.Sort(delegate(Node a, Node b) { return (int)Math.Ceiling(a.x - b.x); });
 
 			// process holes from left to right
 			for (i = 0; i < queue.Count; i++)
@@ -429,7 +428,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			if (end == null) end = start;
 
 			var p = start;
-			bool again = true;
+			var again = true;
 			do
 			{
 				again = false;
@@ -440,7 +439,6 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 					p = end = p.prev;
 					if (p == p.next) return null;
 					again = true;
-
 				}
 				else
 				{
@@ -496,9 +494,11 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 							if (hy == p.y) return p;
 							if (hy == p.next.y) return p.next;
 						}
+
 						m = p.x < p.next.x ? p : p.next;
 					}
 				}
+
 				p = p.next;
 			} while (p != outerNode);
 
@@ -514,16 +514,15 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			var mx = m.x;
 			var my = m.y;
 			var tanMin = float.MaxValue;
-			float tan = 0f;
+			var tan = 0f;
 
 			p = m.next;
 
 			while (p != stop)
 			{
 				if (hx >= p.x && p.x >= mx && hx != p.x &&
-						pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y))
+				    pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y))
 				{
-
 					tan = Math.Abs(hy - p.y) / (hx - p.x); // tangential
 
 					if ((tan < tanMin || (tan == tanMin && p.x > m.x)) && locallyInside(p, hole))
@@ -541,9 +540,9 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 		private static bool locallyInside(Node a, Node b)
 		{
-			return area(a.prev, a, a.next) < 0 ?
-		area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 :
-		area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
+			return area(a.prev, a, a.next) < 0
+				? area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0
+				: area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
 		}
 
 		private static float area(Node p, Node q, Node r)
@@ -551,11 +550,12 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 		}
 
-		private static bool pointInTriangle(float ax, float ay, float bx, float by, float cx, float cy, float px, float py)
+		private static bool pointInTriangle(float ax, float ay, float bx, float by, float cx, float cy, float px,
+			float py)
 		{
 			return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
-		   (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
-		   (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
+			       (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
+			       (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
 		}
 
 		private static Node getLeftmost(Node start)
@@ -577,14 +577,12 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			var i = 0;
 			Node last = null;
 
-			if (clockwise == (signedArea(data, start, end, dim) > 0))
-			{
-				for (i = start; i < end; i += dim) last = insertNode(i, data[i], data[i + 1], last);
-			}
+			if (clockwise == signedArea(data, start, end, dim) > 0)
+				for (i = start; i < end; i += dim)
+					last = insertNode(i, data[i], data[i + 1], last);
 			else
-			{
-				for (i = end - dim; i >= start; i -= dim) last = insertNode(i, data[i], data[i + 1], last);
-			}
+				for (i = end - dim; i >= start; i -= dim)
+					last = insertNode(i, data[i], data[i + 1], last);
 
 			if (last != null && equals(last, last.next))
 			{
@@ -618,6 +616,7 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 				sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
 				j = i;
 			}
+
 			return sum;
 		}
 
@@ -629,7 +628,6 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 			{
 				p.prev = p;
 				p.next = p;
-
 			}
 			else
 			{
@@ -638,19 +636,17 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 				last.next.prev = p;
 				last.next = p;
 			}
+
 			return p;
 		}
-				
+
 		public static Data Flatten(List<List<Vector3>> data)
 		{
 			var dataCount = data.Count;
 			var totalVertCount = 0;
-			for (int i = 0; i < dataCount; i++)
-			{
-				totalVertCount += data[i].Count;
-			}
+			for (var i = 0; i < dataCount; i++) totalVertCount += data[i].Count;
 
-			var result = new Data() { Dim = 2 };
+			var result = new Data { Dim = 2 };
 			result.Vertices = new List<float>(totalVertCount * 2);
 			var holeIndex = 0;
 
@@ -662,21 +658,23 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 					result.Vertices.Add(data[i][j][0]);
 					result.Vertices.Add(data[i][j][2]);
 				}
+
 				if (i > 0)
 				{
 					holeIndex += data[i - 1].Count;
 					result.Holes.Add(holeIndex);
 				}
 			}
+
 			return result;
 		}
 	}
 
 	public class Data
 	{
-		public List<float> Vertices;
-		public List<int> Holes;
 		public int Dim;
+		public List<int> Holes;
+		public List<float> Vertices;
 
 		public Data()
 		{
@@ -687,80 +685,78 @@ namespace Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers
 
 	public class Node
 	{
-
 		/* Member Variables. */
 		public int i;
+		public int mZOrder;
+		public Node next;
+		public Node nextZ;
+		public Node prev;
+		public Node prevZ;
+		public bool steiner;
 		public float x;
 		public float y;
-		public int mZOrder;
-		public Node prev;
-		public Node next;
-		public Node prevZ;
-		public Node nextZ;
-		public bool steiner;
 
 		public Node(int ind, float pX, float pY)
 		{
 			/* Initialize Member Variables. */
-			this.i = ind;
-			this.x = pX;
-			this.y = pY;
-			this.mZOrder = 0;
-			this.prev = null;
-			this.next = null;
-			this.prevZ = null;
-			this.nextZ = null;
+			i = ind;
+			x = pX;
+			y = pY;
+			mZOrder = 0;
+			prev = null;
+			next = null;
+			prevZ = null;
+			nextZ = null;
 		}
 
 		protected void setPreviousNode(Node pNode)
 		{
-			this.prev = pNode;
+			prev = pNode;
 		}
 
 		protected Node getPreviousNode()
 		{
-			return this.prev;
+			return prev;
 		}
 
 		protected void setNextNode(Node pNode)
 		{
-			this.next = pNode;
+			next = pNode;
 		}
 
 		protected Node getNextNode()
 		{
-			return this.next;
+			return next;
 		}
 
 		protected void setZOrder(int pZOrder)
 		{
-			this.mZOrder = pZOrder;
+			mZOrder = pZOrder;
 		}
 
 		protected int getZOrder()
 		{
-			return this.mZOrder;
+			return mZOrder;
 		}
 
 		protected void setPreviousZNode(Node pNode)
 		{
-			this.prevZ = pNode;
+			prevZ = pNode;
 		}
 
 		protected Node getPreviousZNode()
 		{
-			return this.prevZ;
+			return prevZ;
 		}
 
 		protected void setNextZNode(Node pNode)
 		{
-			this.nextZ = pNode;
+			nextZ = pNode;
 		}
 
 		protected Node getNextZNode()
 		{
-			return this.nextZ;
+			return nextZ;
 		}
-
 	}
 }

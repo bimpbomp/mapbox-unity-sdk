@@ -1,7 +1,7 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System;
+﻿using System;
 
+namespace Mapbox.Unity.Map
+{
 	[Serializable]
 	public class Style
 	{
@@ -19,14 +19,8 @@
 
 		public string Id
 		{
-			get
-			{
-				return layerSource.Id;
-			}
-			set
-			{
-				layerSource.Id = value;
-			}
+			get => layerSource.Id;
+			set => layerSource.Id = value;
 		}
 	}
 }

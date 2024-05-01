@@ -1,17 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using SQLite4Unity3d;
-
-namespace Mapbox.Platform.Cache
+﻿namespace Mapbox.Platform.Cache
 {
-
 	/// <summary>
-	/// Don't change the class name: sqlite-net uses it for table creation
+	///     Don't change the class name: sqlite-net uses it for table creation
 	/// </summary>
 	public class tiles
 	{
-
 		public int tile_set { get; set; }
 
 		//hrmpf: multiple PKs not supported by sqlite.net

@@ -1,16 +1,22 @@
+using System.Collections.Generic;
+using Mapbox.Unity.MeshGeneration.Interfaces;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples
 {
-	using System.Collections.Generic;
-	using UnityEngine;
-	using UnityEngine.UI;
-	using Mapbox.Unity.MeshGeneration.Interfaces;
-
 	public class MakiHelper : MonoBehaviour, IFeaturePropertySettable
 	{
 		public static RectTransform Parent;
 		public static GameObject UiPrefab;
 
 		private GameObject _uiObject;
+
+		public void LateUpdate()
+		{
+			if (_uiObject)
+				_uiObject.transform.position = Camera.main.WorldToScreenPoint(transform.position);
+		}
 
 		public void Set(Dictionary<string, object> props)
 		{
@@ -27,18 +33,10 @@ namespace Mapbox.Examples
 			{
 				_uiObject = Instantiate(UiPrefab);
 				_uiObject.transform.SetParent(Parent);
-				_uiObject.transform.Find("Image").GetComponent<Image>().sprite = Resources.Load<Sprite>("maki/" + props["maki"].ToString() + "-15");
-				if (props.ContainsKey("name"))
-				{
-					_uiObject.GetComponentInChildren<Text>().text = props["name"].ToString();
-				}
+				_uiObject.transform.Find("Image").GetComponent<Image>().sprite =
+					Resources.Load<Sprite>("maki/" + props["maki"] + "-15");
+				if (props.ContainsKey("name")) _uiObject.GetComponentInChildren<Text>().text = props["name"].ToString();
 			}
-		}
-
-		public void LateUpdate()
-		{
-			if (_uiObject)
-				_uiObject.transform.position = Camera.main.WorldToScreenPoint(transform.position);
 		}
 	}
 }

@@ -1,22 +1,21 @@
-﻿namespace Mapbox.Unity.Utilities
-{
-	using Mapbox.Unity.Map;
-	using System;
-	using System.Collections;
-	using System.Collections.Generic;
-	using System.Diagnostics;
-	using UnityEngine;
+﻿using System;
+using System.Diagnostics;
+using Mapbox.Unity.Map;
+using UnityEngine;
+using Debug = UnityEngine.Debug;
 
+namespace Mapbox.Unity.Utilities
+{
 	public class MapVisualizerPerformance : MonoBehaviour
 	{
-		private Stopwatch _sw = new Stopwatch();
-		private AbstractMap _map;
-		private AbstractMapVisualizer _mapVisualizer;
 		public int TestCount = 10;
 		private int _currentTest = 1;
-		[NonSerialized]
-		public float TotalTime = 0;
 		private float _firstRun;
+		private AbstractMap _map;
+		private AbstractMapVisualizer _mapVisualizer;
+		private readonly Stopwatch _sw = new();
+
+		[NonSerialized] public float TotalTime;
 
 		protected virtual void Awake()
 		{
@@ -25,7 +24,7 @@
 			_map = FindObjectOfType<AbstractMap>();
 			_mapVisualizer = _map.MapVisualizer;
 
-			_mapVisualizer.OnMapVisualizerStateChanged += (s) =>
+			_mapVisualizer.OnMapVisualizerStateChanged += s =>
 			{
 				if (s == ModuleState.Working)
 				{
@@ -38,7 +37,7 @@
 					if (_currentTest > 1)
 					{
 						TotalTime += _sw.ElapsedMilliseconds;
-						UnityEngine.Debug.Log("Test " + _currentTest + ": " + _sw.ElapsedMilliseconds);
+						Debug.Log("Test " + _currentTest + ": " + _sw.ElapsedMilliseconds);
 					}
 					else
 					{
@@ -53,9 +52,8 @@
 					else
 					{
 						if (_currentTest > 1)
-						{
-							UnityEngine.Debug.Log("First Run:        " + _firstRun + " \r\nRest Average: " + TotalTime / (_currentTest - 1));
-						}
+							Debug.Log("First Run:        " + _firstRun + " \r\nRest Average: " +
+							          TotalTime / (_currentTest - 1));
 					}
 				}
 			};

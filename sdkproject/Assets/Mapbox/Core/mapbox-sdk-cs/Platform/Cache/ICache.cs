@@ -1,32 +1,28 @@
+using Mapbox.Map;
 
 namespace Mapbox.Platform.Cache
 {
-
-	using Mapbox.Map;
-	using System;
-
-
 	public interface ICache
 	{
-
 		/// <summary>
-		/// Maximum number of tiles to store
+		///     Maximum number of tiles to store
 		/// </summary>
 		uint MaxCacheSize { get; }
 
 
 		/// <summary>
-		/// Add tile data to the cache
+		///     Add tile data to the cache
 		/// </summary>
 		/// <param name="tilesetId">Tile set name</param>
-		/// <param name="tileId</param>
+		/// <param name="tileId
+		/// </param>
 		/// <param name="item">Item to cache</param>
 		/// <param name="replaceIfExists">Force insert even if item already exists.</param>
 		void Add(string tilesetId, CanonicalTileId tileId, CacheItem item, bool replaceIfExists);
 
 
 		/// <summary>
-		/// Get tile
+		///     Get tile
 		/// </summary>
 		/// <param name="tilesetId"></param>
 		/// <param name="tileId"></param>
@@ -39,14 +35,14 @@ namespace Mapbox.Platform.Cache
 
 
 		/// <summary>
-		/// Clear cache for one tile set
+		///     Clear cache for one tile set
 		/// </summary>
 		/// <param name="tilesetId"></param>
 		void Clear(string tilesetId);
 
 
 		/// <summary>
-		/// Reinitialize cache. Might be needed after 'Clear', eg for SQLiteCache
+		///     Reinitialize cache. Might be needed after 'Clear', eg for SQLiteCache
 		/// </summary>
 		void ReInit();
 	}

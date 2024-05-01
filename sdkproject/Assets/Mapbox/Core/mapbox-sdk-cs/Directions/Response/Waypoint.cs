@@ -4,26 +4,26 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Json;
+using Mapbox.Utils;
+using Mapbox.Utils.JsonConverters;
+
 namespace Mapbox.Directions
 {
-    using Mapbox.Json;
-    using Mapbox.Utils;
-    using Mapbox.Utils.JsonConverters;
-
-    /// <summary>
-    /// A Waypoint from a Directions API call.
-    /// </summary>
-    public class Waypoint
+	/// <summary>
+	///     A Waypoint from a Directions API call.
+	/// </summary>
+	public class Waypoint
 	{
 		/// <summary>
-		/// Gets or sets the name.
+		///     Gets or sets the name.
 		/// </summary>
 		/// <value>The name.</value>
 		[JsonProperty("name")]
 		public string Name { get; set; }
 
 		/// <summary>
-		/// Gets or sets the location.
+		///     Gets or sets the location.
 		/// </summary>
 		/// <value>The location.</value>
 		[JsonProperty("location")]

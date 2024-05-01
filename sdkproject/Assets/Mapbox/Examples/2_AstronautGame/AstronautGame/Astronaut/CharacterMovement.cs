@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Mapbox.Examples
@@ -10,24 +8,19 @@ namespace Mapbox.Examples
 		public Transform Target;
 		public Animator CharacterAnimator;
 		public float Speed;
-		AstronautMouseController _controller;
-		void Start()
+		private AstronautMouseController _controller;
+
+		private void Start()
 		{
 			_controller = GetComponent<AstronautMouseController>();
 		}
 
-		void Update()
+		private void Update()
 		{
-			
-			if (_controller.enabled)// Because the mouse control script interferes with this script
-			{
+			if (_controller.enabled) // Because the mouse control script interferes with this script
 				return;
-			}
 
-			foreach (var item in Materials)
-			{
-				item.SetVector("_CharacterPosition", transform.position);
-			}
+			foreach (var item in Materials) item.SetVector("_CharacterPosition", transform.position);
 
 			var distance = Vector3.Distance(transform.position, Target.position);
 			if (distance > 0.1f)

@@ -1,68 +1,56 @@
 using System;
-using System.Diagnostics;
-using JetBrains.Annotations;
+using System.Collections.Generic;
+using Mapbox.Directions;
 using Mapbox.Examples;
-using UnityEngine.UI;
+using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using Mapbox.Unity.MeshGeneration.Modifiers;
+using Mapbox.Unity.Utilities;
+using Mapbox.Utils;
+using UnityEngine;
 
 namespace Mapbox.Unity.MeshGeneration.Factories
 {
-	using UnityEngine;
-	using Mapbox.Directions;
-	using System.Collections.Generic;
-	using System.Linq;
-	using Mapbox.Unity.Map;
-	using Data;
-	using Modifiers;
-	using Mapbox.Utils;
-	using Mapbox.Unity.Utilities;
-	using System.Collections;
-
 	public class DirectionsFactory : MonoBehaviour
 	{
-		public Action ArrangingWaypointsStarted = () => { };
-		public Action QuerySent = () => { };
-		public Action<Vector3[]> ArrangingWaypoints = (positions) => { };
-		public Action ArrangingWaypointsFinished = () => { };
-		public Action<Vector3, float> RouteDrawn = (midPoint, TotalLength) => { };
-		public RoutingProfile RoutingProfile = RoutingProfile.Driving;
-
-		[SerializeField] float RoadSizeMultiplier = 1;
+		[SerializeField] private float RoadSizeMultiplier = 1;
 		[SerializeField] private AnimationCurve RoadSizeCurve;
-		[SerializeField] AbstractMap _map;
+		[SerializeField] private AbstractMap _map;
 		[SerializeField] private LineRenderer _lineRenderer;
 		[SerializeField] private LoftModifier _loftModifier;
-		[SerializeField] Material _material;
-		[SerializeField] Transform _waypointsParent;
+		[SerializeField] private Material _material;
+		[SerializeField] private Transform _waypointsParent;
+
+		private List<Vector3> _cachedWaypoints;
+		private int _counter;
+		private Directions.Directions _directions;
+		private GameObject _directionsGO;
+		private bool _isDragging;
+		private Vector3[] _pointArray;
+		private readonly Vector3 _pointUpDelta = new(0, 3, 0);
+
+		private bool _recalculateNext;
 		//[SerializeField] private Dropdown RouteTypeDropdown;
 
 
-		Transform[] _waypoints;
-
-		private List<Vector3> _cachedWaypoints;
-		private Directions _directions;
-		private int _counter;
-		private bool _isDragging = false;
-		private Vector3[] _pointArray;
-		private Vector3 _pointUpDelta = new Vector3(0, 3, 0);
-		GameObject _directionsGO;
-		private bool _recalculateNext;
+		private Transform[] _waypoints;
+		public Action<Vector3[]> ArrangingWaypoints = positions => { };
+		public Action ArrangingWaypointsFinished = () => { };
+		public Action ArrangingWaypointsStarted = () => { };
+		public Action QuerySent = () => { };
+		public Action<Vector3, float> RouteDrawn = (midPoint, TotalLength) => { };
+		public RoutingProfile RoutingProfile = RoutingProfile.Driving;
 
 		protected virtual void Awake()
 		{
-			if (_map == null)
-			{
-				_map = FindObjectOfType<AbstractMap>();
-			}
+			if (_map == null) _map = FindObjectOfType<AbstractMap>();
 
 			_directions = MapboxAccess.Instance.Directions;
 			_map.OnInitialized += Query;
 			_map.OnUpdated += Query;
 
 			_waypoints = new Transform[_waypointsParent.childCount];
-			for (int i = 0; i < _waypointsParent.childCount; i++)
-			{
-				_waypoints[i] = _waypointsParent.GetChild(i);
-			}
+			for (var i = 0; i < _waypointsParent.childCount; i++) _waypoints[i] = _waypointsParent.GetChild(i);
 
 			_pointArray = new Vector3[_waypoints.Length];
 
@@ -79,10 +67,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 				wp.MouseDraging += () =>
 				{
 					_lineRenderer.positionCount = _waypoints.Length;
-					for (int i = 0; i < _waypoints.Length; i++)
-					{
-						_pointArray[i] = _waypoints[i].position + _pointUpDelta;
-					}
+					for (var i = 0; i < _waypoints.Length; i++) _pointArray[i] = _waypoints[i].position + _pointUpDelta;
 
 					_lineRenderer.SetPositions(_pointArray);
 					ArrangingWaypoints(_pointArray);
@@ -100,10 +85,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 		public void Start()
 		{
 			_cachedWaypoints = new List<Vector3>(_waypoints.Length);
-			foreach (var item in _waypoints)
-			{
-				_cachedWaypoints.Add(item.position);
-			}
+			foreach (var item in _waypoints) _cachedWaypoints.Add(item.position);
 
 			_recalculateNext = false;
 			_loftModifier.Initialize();
@@ -115,14 +97,12 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			_map.OnUpdated -= Query;
 		}
 
-		void Query()
+		private void Query()
 		{
 			var count = _waypoints.Length;
 			var wp = new Vector2d[count];
-			for (int i = 0; i < count; i++)
-			{
+			for (var i = 0; i < count; i++)
 				wp[i] = _waypoints[i].GetGeoPosition(_map.CenterMercator, _map.WorldRelativeScale);
-			}
 
 			var directionResource = new DirectionResource(wp, RoutingProfile);
 			directionResource.Steps = true;
@@ -130,27 +110,22 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			QuerySent();
 		}
 
-		void HandleDirectionsResponse(DirectionsResponse response)
+		private void HandleDirectionsResponse(DirectionsResponse response)
 		{
-			if (response == null || null == response.Routes || response.Routes.Count < 1)
-			{
-				return;
-			}
+			if (response == null || null == response.Routes || response.Routes.Count < 1) return;
 
 			var meshData = new MeshData();
 			var unitySpacePositions = new List<Vector3>();
 
 			var totalLength = 0f;
-			Vector3 prevPoint = Unity.Constants.Math.Vector3Zero;
+			var prevPoint = Constants.Math.Vector3Zero;
 			foreach (var point in response.Routes[0].Geometry)
 			{
-				var newPoint = Conversions.GeoToWorldPosition(point.x, point.y, _map.CenterMercator, _map.WorldRelativeScale).ToVector3xz();
+				var newPoint = Conversions
+					.GeoToWorldPosition(point.x, point.y, _map.CenterMercator, _map.WorldRelativeScale).ToVector3xz();
 				unitySpacePositions.Add(newPoint);
 
-				if (prevPoint != Unity.Constants.Math.Vector3Zero)
-				{
-					totalLength += Vector3.Distance(prevPoint, newPoint);
-				}
+				if (prevPoint != Constants.Math.Vector3Zero) totalLength += Vector3.Distance(prevPoint, newPoint);
 
 				prevPoint = newPoint;
 			}
@@ -160,7 +135,8 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			if (_waypoints.Length > 0 && unitySpacePositions.Count > 0)
 			{
 				_waypoints[0].transform.position = unitySpacePositions[0];
-				_waypoints[_waypoints.Length - 1].transform.position = unitySpacePositions[unitySpacePositions.Count - 1];
+				_waypoints[_waypoints.Length - 1].transform.position =
+					unitySpacePositions[unitySpacePositions.Count - 1];
 			}
 
 			var feat = new VectorFeatureUnity();
@@ -174,7 +150,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 
 
 			var midPoint = unitySpacePositions[0];
-			for (int i = 1; i < unitySpacePositions.Count; i++)
+			for (var i = 1; i < unitySpacePositions.Count; i++)
 			{
 				var dist = (unitySpacePositions[i] - unitySpacePositions[i - 1]).magnitude;
 				if (midLength > dist)
@@ -183,7 +159,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 				}
 				else
 				{
-					midPoint = Vector3.Lerp(unitySpacePositions[i - 1], unitySpacePositions[i], (float) midLength / dist);
+					midPoint = Vector3.Lerp(unitySpacePositions[i - 1], unitySpacePositions[i], midLength / dist);
 					break;
 				}
 			}
@@ -191,32 +167,26 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			RouteDrawn(midPoint, totalLength / _map.WorldRelativeScale);
 		}
 
-		GameObject CreateGameObject(MeshData data)
+		private GameObject CreateGameObject(MeshData data)
 		{
-			if (_directionsGO != null)
-			{
-				_directionsGO.Destroy();
-			}
+			if (_directionsGO != null) _directionsGO.Destroy();
 
 			_directionsGO = new GameObject("direction waypoint " + " entity");
-			if (_map != null)
-			{
-				_directionsGO.transform.SetParent(_map.transform);
-			}
+			if (_map != null) _directionsGO.transform.SetParent(_map.transform);
 
 			var mesh = _directionsGO.AddComponent<MeshFilter>().mesh;
 			mesh.subMeshCount = data.Triangles.Count;
 
 			mesh.SetVertices(data.Vertices);
 			_counter = data.Triangles.Count;
-			for (int i = 0; i < _counter; i++)
+			for (var i = 0; i < _counter; i++)
 			{
 				var triangle = data.Triangles[i];
 				mesh.SetTriangles(triangle, i);
 			}
 
 			_counter = data.UV.Count;
-			for (int i = 0; i < _counter; i++)
+			for (var i = 0; i < _counter; i++)
 			{
 				var uv = data.UV[i];
 				mesh.SetUVs(i, uv);
@@ -230,10 +200,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 		public void ChangeRoutingProfile(RoutingProfile profile, bool forceQuery = true)
 		{
 			RoutingProfile = profile;
-			if (forceQuery)
-			{
-				Query();
-			}
+			if (forceQuery) Query();
 		}
 	}
 }

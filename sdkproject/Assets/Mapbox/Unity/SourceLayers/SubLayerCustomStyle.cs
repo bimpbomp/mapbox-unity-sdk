@@ -2,7 +2,13 @@
 {
 	public class SubLayerCustomStyle : ISubLayerCustomStyle
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
+		private SubLayerCustomStyleAtlas _textureAtlas;
+
+		private SubLayerCustomStyleAtlasWithColorPallete _textureAtlasPallete;
+		private SubLayerCustomStyleTiled _tiled;
+
 		public SubLayerCustomStyle(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
@@ -10,10 +16,7 @@
 
 		public UvMapType TexturingType
 		{
-			get
-			{
-				return _materialOptions.texturingType;
-			}
+			get => _materialOptions.texturingType;
 
 			set
 			{
@@ -24,46 +27,33 @@
 				}
 			}
 		}
-		private SubLayerCustomStyleTiled _tiled;
+
 		public ISubLayerCustomStyleTiled Tiled
 		{
 			get
 			{
-				if (_tiled == null)
-				{
-					_tiled = new SubLayerCustomStyleTiled(_materialOptions);
-				}
+				if (_tiled == null) _tiled = new SubLayerCustomStyleTiled(_materialOptions);
 				return _tiled;
 			}
 		}
 
-		private SubLayerCustomStyleAtlas _textureAtlas;
 		public ISubLayerCustomStyleAtlas TextureAtlas
 		{
 			get
 			{
-				if (_textureAtlas == null)
-				{
-					_textureAtlas = new SubLayerCustomStyleAtlas(_materialOptions);
-				}
+				if (_textureAtlas == null) _textureAtlas = new SubLayerCustomStyleAtlas(_materialOptions);
 				return _textureAtlas;
 			}
 		}
 
-		private SubLayerCustomStyleAtlasWithColorPallete _textureAtlasPallete;
 		public ISubLayerCustomStyleAtlasWithColorPallete TextureAtlasWithColorPallete
 		{
 			get
 			{
 				if (_textureAtlasPallete == null)
-				{
 					_textureAtlasPallete = new SubLayerCustomStyleAtlasWithColorPallete(_materialOptions);
-				}
 				return _textureAtlasPallete;
 			}
 		}
 	}
-
 }
-
-

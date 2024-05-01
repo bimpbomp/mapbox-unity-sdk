@@ -1,16 +1,14 @@
-﻿namespace Mapbox.Unity.MeshGeneration.Modifiers
-{
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Mapbox.Unity.MeshGeneration.Components;
-	using UnityEngine;
-	using System.Collections.Generic;
-	using System;
+﻿using System.Collections.Generic;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Unity.MeshGeneration.Modifiers
+{
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Add Monobehaviours Modifier")]
 	public class AddMonoBehavioursModifier : GameObjectModifier
 	{
-		[SerializeField]
-		AddMonoBehavioursModifierType[] _types;
+		[SerializeField] private AddMonoBehavioursModifierType[] _types;
+
 		private HashSet<string> _scripts;
 		private string _tempId;
 

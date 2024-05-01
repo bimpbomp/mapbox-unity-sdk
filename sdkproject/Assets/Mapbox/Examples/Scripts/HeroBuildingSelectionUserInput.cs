@@ -4,48 +4,34 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using Mapbox.Geocoding;
+using Mapbox.Unity;
+using Mapbox.Unity.Utilities;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples
 {
-	using Mapbox.Unity;
-	using UnityEngine;
-	using UnityEngine.UI;
-	using System;
-	using Mapbox.Geocoding;
-	using Mapbox.Utils;
-	using Mapbox.Unity.Location;
-	using Mapbox.Unity.Utilities;
-
 	public class HeroBuildingSelectionUserInput : MonoBehaviour
 	{
-		
-		[Geocode]
-		public string location;
+		[Geocode] public string location;
 
-		[SerializeField]
-		private Vector3 _cameraPosition;
-		[SerializeField]
-		private Vector3 _cameraRotation;
+		[SerializeField] private Vector3 _cameraPosition;
+
+		[SerializeField] private Vector3 _cameraRotation;
+
+		private Button _button;
 
 		private Camera _camera;
 
-		Button _button;
+		private ForwardGeocodeResource _resource;
 
-		ForwardGeocodeResource _resource;
-
-		bool _hasResponse;
-		public bool HasResponse
-		{
-			get
-			{
-				return _hasResponse;
-			}
-		}
+		public bool HasResponse { get; private set; }
 
 		public ForwardGeocodeResponse Response { get; private set; }
 
-		public event Action<ForwardGeocodeResponse, bool> OnGeocoderResponse = delegate { };
-
-		void Awake()
+		private void Awake()
 		{
 			_button = GetComponent<Button>();
 			_button.onClick.AddListener(HandleUserInput);
@@ -53,26 +39,27 @@ namespace Mapbox.Examples
 			_camera = Camera.main;
 		}
 
-		void TransformCamera()
+		public event Action<ForwardGeocodeResponse, bool> OnGeocoderResponse = delegate { };
+
+		private void TransformCamera()
 		{
 			_camera.transform.position = _cameraPosition;
-			_camera.transform.localEulerAngles = _cameraRotation;	
+			_camera.transform.localEulerAngles = _cameraRotation;
 		}
 
-		void HandleUserInput()
+		private void HandleUserInput()
 		{
-			_hasResponse = false;
+			HasResponse = false;
 			if (!string.IsNullOrEmpty(location))
 			{
 				_resource.Query = location;
 				MapboxAccess.Instance.Geocoder.Geocode(_resource, HandleGeocoderResponse);
-
 			}
 		}
 
-		void HandleGeocoderResponse(ForwardGeocodeResponse res)
+		private void HandleGeocoderResponse(ForwardGeocodeResponse res)
 		{
-			_hasResponse = true;
+			HasResponse = true;
 			Response = res;
 			TransformCamera();
 			OnGeocoderResponse(res, false);
@@ -83,6 +70,5 @@ namespace Mapbox.Examples
 			_cameraPosition = _camera.transform.position;
 			_cameraRotation = _camera.transform.localEulerAngles;
 		}
-
 	}
 }

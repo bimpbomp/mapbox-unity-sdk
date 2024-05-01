@@ -1,21 +1,16 @@
+using System.Linq;
+using Mapbox.Utils;
+using NUnit.Framework;
 
 namespace Mapbox.Unity.UnitTest
 {
-
-	using System.Collections.Generic;
-	using System.Linq;
-	using NUnit.Framework;
-	using Mapbox.Utils;
-
-
 	[TestFixture]
 	internal class CircularBufferTest
 	{
-
 		[Test]
 		public void SettingAndGettingValues()
 		{
-			CircularBuffer<int> cb = new CircularBuffer<int>(5);
+			var cb = new CircularBuffer<int>(5);
 
 			Assert.AreEqual(0, cb.Count, "initializes to 0");
 
@@ -44,31 +39,26 @@ namespace Mapbox.Unity.UnitTest
 
 			// test getting values via different methods
 
-			int[] expected = new int[] { 80, 70, 60, 50, 40 };
+			int[] expected = { 80, 70, 60, 50, 40 };
 
 			// test values via indexer
-			for (int i = 0; i < cb.Count; i++)
-			{
-				Assert.AreEqual(expected[i], cb[i], "indexer returned correct value");
-			}
+			for (var i = 0; i < cb.Count; i++) Assert.AreEqual(expected[i], cb[i], "indexer returned correct value");
 
 			// test values via Enumerator
-			int[] actual = new int[cb.Count];
-			int idx = 0;
-			IEnumerator<int> enumerator = cb.GetEnumerator();
+			var actual = new int[cb.Count];
+			var idx = 0;
+			var enumerator = cb.GetEnumerator();
 			while (enumerator.MoveNext())
 			{
 				actual[idx] = enumerator.Current;
 				idx++;
 			}
+
 			Assert.AreEqual(expected, actual, "IEnumerator returned correct sequence");
 
 			// test values via Enumerable
 			actual = cb.GetEnumerable().ToArray();
 			Assert.AreEqual(expected, actual, "IEnumerable returned correct sequence");
 		}
-
-
 	}
 }
-

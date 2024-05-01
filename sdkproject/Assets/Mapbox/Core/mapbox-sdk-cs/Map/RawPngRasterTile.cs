@@ -7,12 +7,12 @@
 namespace Mapbox.Map
 {
 	/// <summary>
-	///    A raster tile containing an encoded RGBA PNG.
-	/// <see href="https://www.mapbox.com/blog/terrain-rgb/"> Read about global elevation data. </see>
+	///     A raster tile containing an encoded RGBA PNG.
+	///     <see href="https://www.mapbox.com/blog/terrain-rgb/"> Read about global elevation data. </see>
 	/// </summary>
 	/// <example>
-	/// Print the real world height, in meters, for each pixel:
-	/// <code>
+	///     Print the real world height, in meters, for each pixel:
+	///     <code>
 	/// var texture = new Texture2D(0, 0);
 	/// texture.LoadImage(tile.Data);
 	/// for (int i = 0; i &lt; texture.width; i++)

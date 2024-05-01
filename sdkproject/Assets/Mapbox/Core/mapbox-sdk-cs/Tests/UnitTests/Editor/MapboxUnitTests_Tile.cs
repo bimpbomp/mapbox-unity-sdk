@@ -6,16 +6,17 @@
 
 
 // TODO: figure out how run tests outside of Unity with .NET framework, something like '#if !UNITY'
+
+using Mapbox.Map;
+using Mapbox.Platform;
+using Mapbox.Unity;
+using NUnit.Framework;
+
 #if UNITY_5_6_OR_NEWER
 
 
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-
-	using Mapbox.Map;
-	using Mapbox.Platform;
-	using NUnit.Framework;
 #if UNITY_5_6_OR_NEWER
 	using System.Collections;
 	using UnityEngine.TestTools;
@@ -25,16 +26,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 	[TestFixture]
 	internal class TileTest
 	{
-
-
-		private FileSource _fs;
-
-
 		[SetUp]
 		public void SetUp()
 		{
 #if UNITY_5_6_OR_NEWER
-			_fs = new FileSource(Unity.MapboxAccess.Instance.Configuration.GetMapsSkuToken, Unity.MapboxAccess.Instance.Configuration.AccessToken);
+			_fs = new FileSource(MapboxAccess.Instance.Configuration.GetMapsSkuToken,
+				MapboxAccess.Instance.Configuration.AccessToken);
 #else
 			// when run outside of Unity FileSource gets the access token from environment variable 'MAPBOX_ACCESS_TOKEN'
 			_fs = new FileSource();
@@ -42,13 +39,15 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		}
 
 
+		private FileSource _fs;
+
 
 #if UNITY_5_6_OR_NEWER
 		[UnityTest]
 		public IEnumerator TileLoading()
 #else
 		[Test]
-		public void TileLoading() 
+		public void TileLoading()
 #endif
 		{
 			byte[] data;
@@ -61,8 +60,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			tile.Initialize(parameters, () => { data = tile.Data; });
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -71,13 +70,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		}
 
 
-
 #if UNITY_5_6_OR_NEWER
 		[UnityTest]
 		public IEnumerator States()
 #else
 		[Test]
-		public void States() 
+		public void States()
 #endif
 		{
 			var parameters = new Tile.Parameters();
@@ -91,8 +89,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			Assert.AreEqual(Tile.State.Loading, tile.CurrentState);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif

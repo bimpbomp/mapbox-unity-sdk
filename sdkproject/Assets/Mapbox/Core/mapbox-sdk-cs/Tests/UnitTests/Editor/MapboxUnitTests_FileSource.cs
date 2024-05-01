@@ -5,25 +5,24 @@
 //-----------------------------------------------------------------------
 
 // TODO: figure out how run tests outside of Unity with .NET framework, something like '#if !UNITY'
+
+using Mapbox.Platform;
+using Mapbox.Unity;
+using NUnit.Framework;
+
 #if UNITY_5_6_OR_NEWER
 
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-
-	using Mapbox.Platform;
-	using NUnit.Framework;
 #if UNITY_5_6_OR_NEWER
 	using UnityEngine.TestTools;
 	using System.Collections;
 #endif
 
 
-
 	[TestFixture]
 	internal class FileSourceTest
 	{
-
 		private const string _url = "https://api.mapbox.com/geocoding/v5/mapbox.places/helsinki.json";
 		private FileSource _fs;
 		private int _timeout = 10;
@@ -33,14 +32,14 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public void SetUp()
 		{
 #if UNITY_5_6_OR_NEWER
-			_fs = new FileSource(Unity.MapboxAccess.Instance.Configuration.GetMapsSkuToken, Unity.MapboxAccess.Instance.Configuration.AccessToken);
-			_timeout = Unity.MapboxAccess.Instance.Configuration.DefaultTimeout;
+			_fs = new FileSource(MapboxAccess.Instance.Configuration.GetMapsSkuToken,
+				MapboxAccess.Instance.Configuration.AccessToken);
+			_timeout = MapboxAccess.Instance.Configuration.DefaultTimeout;
 #else
 			// when run outside of Unity FileSource gets the access token from environment variable 'MAPBOX_ACCESS_TOKEN'
 			_fs = new FileSource();
 #endif
 		}
-
 
 
 #if !UNITY_5_6_OR_NEWER
@@ -55,7 +54,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 #endif
 
 
-
 #if UNITY_5_6_OR_NEWER
 		[UnityTest]
 		public IEnumerator Request()
@@ -67,16 +65,13 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			byte[] data = null;
 			_fs.Request(
 				_url,
-				(Response res) =>
-				{
-					data = res.Data;
-				}
+				res => { data = res.Data; }
 				, _timeout
 			);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -84,31 +79,29 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		}
 
 
-
 #if UNITY_5_6_OR_NEWER
 		[UnityTest]
 		public IEnumerator MultipleRequests()
 #else
 		[Test]
-		public void Request() 
+		public void Request()
 #endif
 		{
-			int count = 0;
+			var count = 0;
 
-			_fs.Request(_url, (Response res) => ++count, _timeout);
-			_fs.Request(_url, (Response res) => ++count, _timeout);
-			_fs.Request(_url, (Response res) => ++count, _timeout);
+			_fs.Request(_url, res => ++count, _timeout);
+			_fs.Request(_url, res => ++count, _timeout);
+			_fs.Request(_url, res => ++count, _timeout);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 
 			Assert.AreEqual(count, 3, "Should have received 3 replies.");
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -119,13 +112,13 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public IEnumerator RequestCancel()
 #else
 		[Test]
-		public void RequestCancel() 
+		public void RequestCancel()
 #endif
 		{
 			var request = _fs.Request(
 				//use "heavy" tile with 182KB that request doesn't finish before it is cancelled
 				"https://a.tiles.mapbox.com/v4/mapbox.mapbox-terrain-v2,mapbox.mapbox-streets-v7/10/545/361.vector.pbf",
-				(Response res) =>
+				res =>
 				{
 					// HACK!! THIS IS BAAAD, investigate more!
 					// on *some* Android devices (eg Samsung S8 not on Pixel 2) and *some* iPhones
@@ -154,13 +147,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			request.Cancel();
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -168,12 +160,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public IEnumerator RequestDnsError()
 #else
 		[Test]
-		public void RequestDnsError() 
+		public void RequestDnsError()
 #endif
 		{
 			_fs.Request(
 				"https://dnserror.shouldnotwork",
-				(Response res) =>
+				res =>
 				{
 					Assert.IsTrue(res.HasError);
 					// Attention: when using Fiddler to throttle requests message is "Failed to receive data"
@@ -186,13 +178,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -200,7 +191,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public IEnumerator RequestForbidden()
 #else
 		[Test]
-		public void RequestForbidden() 
+		public void RequestForbidden()
 #endif
 		{
 			// Mapbox servers will return a forbidden when attempting
@@ -208,7 +199,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			// on the query. Let's hope the behaviour stay like this.
 			_fs.Request(
 				"https://mapbox.com/forbidden",
-				(Response res) =>
+				res =>
 				{
 					Assert.IsTrue(res.HasError);
 					Assert.AreEqual(403, res.StatusCode);
@@ -217,13 +208,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -231,19 +221,17 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public IEnumerator WaitWithNoRequests()
 #else
 		[Test]
-		public void WaitWithNoRequests() 
+		public void WaitWithNoRequests()
 #endif
 		{
 			// This should simply not block.
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 		}
-
-
 	}
 }
 

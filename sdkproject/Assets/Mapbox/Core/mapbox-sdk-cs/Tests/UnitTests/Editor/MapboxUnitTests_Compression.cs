@@ -5,14 +5,17 @@
 //-----------------------------------------------------------------------
 
 // TODO: figure out how run tests outside of Unity with .NET framework, something like '#if !UNITY'
+
+using System.Text;
+using Mapbox.Platform;
+using Mapbox.Unity;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 #if UNITY_5_6_OR_NEWER
 
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-	using System.Text;
-	using Mapbox.Platform;
-	using Mapbox.Utils;
-	using NUnit.Framework;
 #if UNITY_5_6_OR_NEWER
 	using UnityEngine.TestTools;
 	using System.Collections;
@@ -22,23 +25,22 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 	[TestFixture]
 	internal class CompressionTest
 	{
-
-
-		private FileSource _fs;
-		private int _timeout = 10;
-
-
 		[SetUp]
 		public void SetUp()
 		{
 #if UNITY_5_6_OR_NEWER
-			_fs = new FileSource(Unity.MapboxAccess.Instance.Configuration.GetMapsSkuToken, Unity.MapboxAccess.Instance.Configuration.AccessToken);
-			_timeout = Unity.MapboxAccess.Instance.Configuration.DefaultTimeout;
+			_fs = new FileSource(MapboxAccess.Instance.Configuration.GetMapsSkuToken,
+				MapboxAccess.Instance.Configuration.AccessToken);
+			_timeout = MapboxAccess.Instance.Configuration.DefaultTimeout;
 #else
 			// when run outside of Unity FileSource gets the access token from environment variable 'MAPBOX_ACCESS_TOKEN'
 			_fs = new FileSource();
 #endif
 		}
+
+
+		private FileSource _fs;
+		private int _timeout = 10;
 
 
 		[Test]
@@ -68,7 +70,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			// Vector tiles are compressed.
 			_fs.Request(
 				"https://api.mapbox.com/v4/mapbox.mapbox-streets-v7/0/0/0.vector.pbf",
-				(Response res) =>
+				res =>
 				{
 					if (res.HasError)
 					{
@@ -78,6 +80,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 						System.Diagnostics.Debug.WriteLine(res.ExceptionsAsString);
 #endif
 					}
+
 					buffer = res.Data;
 				},
 				_timeout
@@ -85,8 +88,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -114,7 +117,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			// Vector tiles are compressed.
 			_fs.Request(
 				"https://api.mapbox.com/v4/mapbox.mapbox-streets-v7/0/0/0.vector.pbf",
-				(Response res) =>
+				res =>
 				{
 					if (res.HasError)
 					{
@@ -124,20 +127,21 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 						System.Diagnostics.Debug.WriteLine(res.ExceptionsAsString);
 #endif
 					}
+
 					buffer = res.Data;
 				},
 				_timeout
 			);
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
 
-            // tiles are automatically decompressed during HttpRequest on full .Net framework
-            // not on .NET Core / UWP / Unity
+			// tiles are automatically decompressed during HttpRequest on full .Net framework
+			// not on .NET Core / UWP / Unity
 #if UNITY_EDITOR_OSX && UNITY_IOS
             Assert.AreEqual(buffer.Length, Compression.Decompress(buffer).Length); // EditMode on OSX
 #elif UNITY_EDITOR && (UNITY_IOS || UNITY_ANDROID) // PlayMode tests in Editor

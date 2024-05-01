@@ -1,7 +1,8 @@
-﻿namespace Mapbox.Unity.Map
+﻿using System;
+using UnityEngine;
+
+namespace Mapbox.Unity.Map
 {
-	using System;
-	using UnityEngine;
 	[Serializable]
 	public class CameraBoundsTileProviderOptions : ExtentOptions
 	{
@@ -11,7 +12,7 @@
 
 		public override void SetOptions(ExtentOptions extentOptions)
 		{
-			CameraBoundsTileProviderOptions options = extentOptions as CameraBoundsTileProviderOptions;
+			var options = extentOptions as CameraBoundsTileProviderOptions;
 			if (options != null)
 			{
 				camera = options.camera;
@@ -20,7 +21,8 @@
 			}
 			else
 			{
-				Debug.LogError("ExtentOptions type mismatch : Using " + extentOptions.GetType() + " to set extent of type " + this.GetType());
+				Debug.LogError("ExtentOptions type mismatch : Using " + extentOptions.GetType() +
+				               " to set extent of type " + GetType());
 			}
 		}
 

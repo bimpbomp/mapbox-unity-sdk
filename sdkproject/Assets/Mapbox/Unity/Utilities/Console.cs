@@ -1,39 +1,30 @@
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Unity.Utilities
 {
-	using UnityEngine;
-	using UnityEngine.UI;
-	
 	public class Console : MonoBehaviour
 	{
-		[SerializeField]
-		Button _toggleButton;
+		[SerializeField] private Button _toggleButton;
 
-		[SerializeField]
-		GameObject _menu;
+		[SerializeField] private GameObject _menu;
 
-		[SerializeField]
-		Text _logText;
+		[SerializeField] private Text _logText;
 
-		[SerializeField]
-		ScrollRect _logScroll;
+		[SerializeField] private ScrollRect _logScroll;
 
-		static Console _instance;
-		public static Console Instance { get { return _instance; } }
-
-		string _log;
+		private string _log;
+		public static Console Instance { get; private set; }
 
 
 		protected virtual void Awake()
 		{
-			if (_instance != null)
-			{
-				Debug.LogError("Duplicate singleton!", gameObject);
-			}
-			_instance = this;
+			if (Instance != null) Debug.LogError("Duplicate singleton!", gameObject);
+			Instance = this;
 			ClearLog();
 		}
 
-		void ClearLog()
+		private void ClearLog()
 		{
 			_log = "";
 			_logText.text = _log;
@@ -42,10 +33,7 @@ namespace Mapbox.Unity.Utilities
 
 		public void Log(string log, string color)
 		{
-			if (!string.IsNullOrEmpty(_log) && _log.Length > 15000)
-			{
-				_log = "";
-			}
+			if (!string.IsNullOrEmpty(_log) && _log.Length > 15000) _log = "";
 			_log += string.Format("<color={0}>{1}</color>\n", color, log);
 			_logText.text = _log;
 			_logScroll.verticalNormalizedPosition = 0f;

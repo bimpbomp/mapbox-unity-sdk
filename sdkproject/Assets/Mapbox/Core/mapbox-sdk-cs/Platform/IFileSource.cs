@@ -4,11 +4,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using Mapbox.Map;
+
 namespace Mapbox.Platform
 {
-	using Mapbox.Map;
-	using System;
-
 	/// <summary>
 	///     A data source abstraction. Used by classes that need to fetch data but really
 	///     don't care about from where the data is coming from. An implementation of
@@ -25,6 +25,7 @@ namespace Mapbox.Platform
 		///     request. This handle can be completely ignored if there is no intention of ever
 		///     canceling the request.
 		/// </returns>
-		IAsyncRequest Request(string uri, Action<Response> callback, int timeout = 10, CanonicalTileId tileId = new CanonicalTileId(), string tilesetId = null);
+		IAsyncRequest Request(string uri, Action<Response> callback, int timeout = 10, CanonicalTileId tileId = new(),
+			string tilesetId = null);
 	}
 }

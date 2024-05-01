@@ -19,18 +19,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+
 #if WINDOWS_PHONE && !USE_WP8_NATIVE_SQLITE
 #define USE_CSHARP_SQLITE
 #endif
-
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading;
 
 #if USE_CSHARP_SQLITE
 using Sqlite3 = Community.CsharpSqlite.Sqlite3;
@@ -44,17 +36,27 @@ using Sqlite3Statement = Sqlite.Statement;
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
 #endif
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 
 namespace SQLite4Unity3d
 {
 	public class SQLiteException : Exception
 	{
-		public SQLite3.Result Result { get; private set; }
-
 		protected SQLiteException(SQLite3.Result r, string message) : base(message)
 		{
 			Result = r;
 		}
+
+		public SQLite3.Result Result { get; }
 
 		public static SQLiteException New(SQLite3.Result r, string message)
 		{
@@ -64,36 +66,36 @@ namespace SQLite4Unity3d
 
 	public class NotNullConstraintViolationException : SQLiteException
 	{
-		public IEnumerable<TableMapping.Column> Columns { get; protected set; }
-
 		protected NotNullConstraintViolationException(SQLite3.Result r, string message)
 			: this(r, message, null, null)
 		{
-
 		}
 
-		protected NotNullConstraintViolationException(SQLite3.Result r, string message, TableMapping mapping, object obj)
+		protected NotNullConstraintViolationException(SQLite3.Result r, string message, TableMapping mapping,
+			object obj)
 			: base(r, message)
 		{
 			if (mapping != null && obj != null)
-			{
-				this.Columns = from c in mapping.Columns
-							   where c.IsNullable == false && c.GetValue(obj) == null
-							   select c;
-			}
+				Columns = from c in mapping.Columns
+					where c.IsNullable == false && c.GetValue(obj) == null
+					select c;
 		}
 
-		public static new NotNullConstraintViolationException New(SQLite3.Result r, string message)
+		public IEnumerable<TableMapping.Column> Columns { get; protected set; }
+
+		public new static NotNullConstraintViolationException New(SQLite3.Result r, string message)
 		{
 			return new NotNullConstraintViolationException(r, message);
 		}
 
-		public static NotNullConstraintViolationException New(SQLite3.Result r, string message, TableMapping mapping, object obj)
+		public static NotNullConstraintViolationException New(SQLite3.Result r, string message, TableMapping mapping,
+			object obj)
 		{
 			return new NotNullConstraintViolationException(r, message, mapping, obj);
 		}
 
-		public static NotNullConstraintViolationException New(SQLiteException exception, TableMapping mapping, object obj)
+		public static NotNullConstraintViolationException New(SQLiteException exception, TableMapping mapping,
+			object obj)
 		{
 			return new NotNullConstraintViolationException(exception.Result, exception.Message, mapping, obj);
 		}
@@ -102,9 +104,13 @@ namespace SQLite4Unity3d
 	[Flags]
 	public enum SQLiteOpenFlags
 	{
-		ReadOnly = 1, ReadWrite = 2, Create = 4,
-		NoMutex = 0x8000, FullMutex = 0x10000,
-		SharedCache = 0x20000, PrivateCache = 0x40000,
+		ReadOnly = 1,
+		ReadWrite = 2,
+		Create = 4,
+		NoMutex = 0x8000,
+		FullMutex = 0x10000,
+		SharedCache = 0x20000,
+		PrivateCache = 0x40000,
 		ProtectionComplete = 0x00100000,
 		ProtectionCompleteUnlessOpen = 0x00200000,
 		ProtectionCompleteUntilFirstUserAuthentication = 0x00300000,
@@ -115,50 +121,57 @@ namespace SQLite4Unity3d
 	public enum CreateFlags
 	{
 		None = 0,
-		ImplicitPK = 1,    // create a primary key for field called 'Id' (Orm.ImplicitPkName)
+		ImplicitPK = 1, // create a primary key for field called 'Id' (Orm.ImplicitPkName)
 		ImplicitIndex = 2, // create an index for fields ending in 'Id' (Orm.ImplicitIndexSuffix)
-		AllImplicit = 3,   // do both above
+		AllImplicit = 3, // do both above
 
-		AutoIncPK = 4      // force PK field to be auto inc
+		AutoIncPK = 4 // force PK field to be auto inc
 	}
 
 	/// <summary>
-	/// Represents an open connection to a SQLite database.
+	///     Represents an open connection to a SQLite database.
 	/// </summary>
-	public partial class SQLiteConnection : IDisposable
+	public class SQLiteConnection : IDisposable
 	{
-		private bool _open;
-		private TimeSpan _busyTimeout;
-		private Dictionary<string, TableMapping> _mappings = null;
-		private Dictionary<string, TableMapping> _tables = null;
-		private System.Diagnostics.Stopwatch _sw;
-		private long _elapsedMilliseconds = 0;
-
-		private int _transactionDepth = 0;
-		private Random _rand = new Random();
-
-		public Sqlite3DatabaseHandle Handle { get; private set; }
-		internal static readonly Sqlite3DatabaseHandle NullHandle = default(Sqlite3DatabaseHandle);
-
-		public string DatabasePath { get; private set; }
-
-		public bool TimeExecution { get; set; }
-
-		public bool Trace { get; set; }
-
-		public bool StoreDateTimeAsTicks { get; private set; }
+		internal static readonly Sqlite3DatabaseHandle NullHandle = default;
 
 		/// <summary>
-		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		///     Used to list some code that we want the MonoTouch linker
+		///     to see, but that we never want to actually execute.
+		/// </summary>
+#pragma warning disable 0649
+		private static bool _preserveDuringLinkMagic;
+#pragma warning restore 0649
+		private TimeSpan _busyTimeout;
+		private long _elapsedMilliseconds;
+		private Dictionary<string, TableMapping> _mappings;
+		private bool _open;
+		private readonly Random _rand = new();
+		private Stopwatch _sw;
+		private Dictionary<string, TableMapping> _tables;
+
+		private int _transactionDepth;
+
+		static SQLiteConnection()
+		{
+			if (_preserveDuringLinkMagic)
+			{
+				var ti = new ColumnInfo();
+				ti.Name = "magic";
+			}
+		}
+
+		/// <summary>
+		///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
 		/// <param name="databasePath">
-		/// Specifies the path to the database file.
+		///     Specifies the path to the database file.
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
-		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The default of false is
-		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
-		/// down sides, when setting storeDateTimeAsTicks = true.
+		///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		///     absolutely do want to store them as Ticks in all new projects. The default of false is
+		///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+		///     down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
 		public SQLiteConnection(string databasePath, bool storeDateTimeAsTicks = false)
 			: this(databasePath, SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create, storeDateTimeAsTicks)
@@ -166,16 +179,16 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
+		///     Constructs a new SQLiteConnection and opens a SQLite database specified by databasePath.
 		/// </summary>
 		/// <param name="databasePath">
-		/// Specifies the path to the database file.
+		///     Specifies the path to the database file.
 		/// </param>
 		/// <param name="storeDateTimeAsTicks">
-		/// Specifies whether to store DateTime properties as ticks (true) or strings (false). You
-		/// absolutely do want to store them as Ticks in all new projects. The default of false is
-		/// only here for backwards compatibility. There is a *significant* speed advantage, with no
-		/// down sides, when setting storeDateTimeAsTicks = true.
+		///     Specifies whether to store DateTime properties as ticks (true) or strings (false). You
+		///     absolutely do want to store them as Ticks in all new projects. The default of false is
+		///     only here for backwards compatibility. There is a *significant* speed advantage, with no
+		///     down sides, when setting storeDateTimeAsTicks = true.
 		/// </param>
 		public SQLiteConnection(string databasePath, SQLiteOpenFlags openFlags, bool storeDateTimeAsTicks = false)
 		{
@@ -202,9 +215,7 @@ namespace SQLite4Unity3d
 
 			Handle = handle;
 			if (r != SQLite3.Result.OK)
-			{
-				throw SQLiteException.New(r, String.Format("Could not open database file: {0} ({1})", DatabasePath, r));
-			}
+				throw SQLiteException.New(r, string.Format("Could not open database file: {0} ({1})", DatabasePath, r));
 			_open = true;
 
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
@@ -212,126 +223,106 @@ namespace SQLite4Unity3d
 			BusyTimeout = TimeSpan.FromSeconds(0.1);
 		}
 
-		static SQLiteConnection()
+		public Sqlite3DatabaseHandle Handle { get; private set; }
+
+		public string DatabasePath { get; }
+
+		public bool TimeExecution { get; set; }
+
+		public bool Trace { get; set; }
+
+		public bool StoreDateTimeAsTicks { get; }
+
+		/// <summary>
+		///     Sets a busy handler to sleep the specified amount of time when a table is locked.
+		///     The handler will sleep multiple times until a total time of <see cref="BusyTimeout" /> has accumulated.
+		/// </summary>
+		public TimeSpan BusyTimeout
 		{
-			if (_preserveDuringLinkMagic)
+			get => _busyTimeout;
+			set
 			{
-				var ti = new ColumnInfo();
-				ti.Name = "magic";
+				_busyTimeout = value;
+				if (Handle != NullHandle) SQLite3.BusyTimeout(Handle, (int)_busyTimeout.TotalMilliseconds);
 			}
+		}
+
+		/// <summary>
+		///     Returns the mappings from types to tables that the connection
+		///     currently understands.
+		/// </summary>
+		public IEnumerable<TableMapping> TableMappings =>
+			_tables != null ? _tables.Values : Enumerable.Empty<TableMapping>();
+
+		/// <summary>
+		///     Whether <see cref="BeginTransaction" /> has been called and the database is waiting for a <see cref="Commit" />.
+		/// </summary>
+		public bool IsInTransaction => _transactionDepth > 0;
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 
 		public void EnableLoadExtension(int onoff)
 		{
-			SQLite3.Result r = SQLite3.EnableLoadExtension(Handle, onoff);
+			var r = SQLite3.EnableLoadExtension(Handle, onoff);
 			if (r != SQLite3.Result.OK)
 			{
-				string msg = SQLite3.GetErrmsg(Handle);
+				var msg = SQLite3.GetErrmsg(Handle);
 				throw SQLiteException.New(r, msg);
 			}
 		}
 
-		static byte[] GetNullTerminatedUtf8(string s)
+		private static byte[] GetNullTerminatedUtf8(string s)
 		{
-			var utf8Length = System.Text.Encoding.UTF8.GetByteCount(s);
+			var utf8Length = Encoding.UTF8.GetByteCount(s);
 			var bytes = new byte[utf8Length + 1];
-			utf8Length = System.Text.Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
+			utf8Length = Encoding.UTF8.GetBytes(s, 0, s.Length, bytes, 0);
 			return bytes;
 		}
 
 		/// <summary>
-		/// Used to list some code that we want the MonoTouch linker
-		/// to see, but that we never want to actually execute.
-		/// </summary>
-#pragma warning disable 0649
-		static bool _preserveDuringLinkMagic;
-#pragma warning restore 0649
-
-		/// <summary>
-		/// Sets a busy handler to sleep the specified amount of time when a table is locked.
-		/// The handler will sleep multiple times until a total time of <see cref="BusyTimeout"/> has accumulated.
-		/// </summary>
-		public TimeSpan BusyTimeout
-		{
-			get { return _busyTimeout; }
-			set
-			{
-				_busyTimeout = value;
-				if (Handle != NullHandle)
-				{
-					SQLite3.BusyTimeout(Handle, (int)_busyTimeout.TotalMilliseconds);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Returns the mappings from types to tables that the connection
-		/// currently understands.
-		/// </summary>
-		public IEnumerable<TableMapping> TableMappings
-		{
-			get
-			{
-				return _tables != null ? _tables.Values : Enumerable.Empty<TableMapping>();
-			}
-		}
-
-		/// <summary>
-		/// Retrieves the mapping that is automatically generated for the given type.
+		///     Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <param name="type">
-		/// The type whose mapping to the database is returned.
-		/// </param>         
+		///     The type whose mapping to the database is returned.
+		/// </param>
 		/// <param name="createFlags">
-		/// Optional flags allowing implicit PK and indexes based on naming conventions
-		/// </param>     
+		///     Optional flags allowing implicit PK and indexes based on naming conventions
+		/// </param>
 		/// <returns>
-		/// The mapping represents the schema of the columns of the database and contains 
-		/// methods to set and get properties of objects.
+		///     The mapping represents the schema of the columns of the database and contains
+		///     methods to set and get properties of objects.
 		/// </returns>
 		public TableMapping GetMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
-			if (_mappings == null)
-			{
-				_mappings = new Dictionary<string, TableMapping>();
-			}
+			if (_mappings == null) _mappings = new Dictionary<string, TableMapping>();
 			TableMapping map;
 			if (!_mappings.TryGetValue(type.FullName, out map))
 			{
 				map = new TableMapping(type, createFlags);
 				_mappings[type.FullName] = map;
 			}
+
 			return map;
 		}
 
 		/// <summary>
-		/// Retrieves the mapping that is automatically generated for the given type.
+		///     Retrieves the mapping that is automatically generated for the given type.
 		/// </summary>
 		/// <returns>
-		/// The mapping represents the schema of the columns of the database and contains 
-		/// methods to set and get properties of objects.
+		///     The mapping represents the schema of the columns of the database and contains
+		///     methods to set and get properties of objects.
 		/// </returns>
 		public TableMapping GetMapping<T>()
 		{
 			return GetMapping(typeof(T));
 		}
 
-		private struct IndexedColumn
-		{
-			public int Order;
-			public string ColumnName;
-		}
-
-		private struct IndexInfo
-		{
-			public string IndexName;
-			public string TableName;
-			public bool Unique;
-			public List<IndexedColumn> Columns;
-		}
-
 		/// <summary>
-		/// Executes a "drop table" on the database.  This is non-recoverable.
+		///     Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
 		public int DropTable<T>()
 		{
@@ -343,13 +334,13 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Executes a "create table if not exists" on the database. It also
-		/// creates any specified indexes on the columns of the table. It uses
-		/// a schema automatically generated from the specified type. You can
-		/// later access this schema by calling GetMapping.
+		///     Executes a "create table if not exists" on the database. It also
+		///     creates any specified indexes on the columns of the table. It uses
+		///     a schema automatically generated from the specified type. You can
+		///     later access this schema by calling GetMapping.
 		/// </summary>
 		/// <returns>
-		/// The number of entries added to the database schema.
+		///     The number of entries added to the database schema.
 		/// </returns>
 		public int CreateTable<T>(CreateFlags createFlags = CreateFlags.None)
 		{
@@ -357,28 +348,26 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Executes a "create table if not exists" on the database. It also
-		/// creates any specified indexes on the columns of the table. It uses
-		/// a schema automatically generated from the specified type. You can
-		/// later access this schema by calling GetMapping.
+		///     Executes a "create table if not exists" on the database. It also
+		///     creates any specified indexes on the columns of the table. It uses
+		///     a schema automatically generated from the specified type. You can
+		///     later access this schema by calling GetMapping.
 		/// </summary>
 		/// <param name="ty">Type to reflect to a database table.</param>
-		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>  
+		/// <param name="createFlags">Optional flags allowing implicit PK and indexes based on naming conventions.</param>
 		/// <returns>
-		/// The number of entries added to the database schema.
+		///     The number of entries added to the database schema.
 		/// </returns>
 		public int CreateTable(Type ty, CreateFlags createFlags = CreateFlags.None)
 		{
-			if (_tables == null)
-			{
-				_tables = new Dictionary<string, TableMapping>();
-			}
+			if (_tables == null) _tables = new Dictionary<string, TableMapping>();
 			TableMapping map;
 			if (!_tables.TryGetValue(ty.FullName, out map))
 			{
 				map = GetMapping(ty, createFlags);
 				_tables.Add(ty.FullName, map);
 			}
+
 			var query = "create table if not exists \"" + map.TableName + "\"(\n";
 
 			var decls = map.Columns.Select(p => Orm.SqlDecl(p, StoreDateTimeAsTicks));
@@ -389,39 +378,33 @@ namespace SQLite4Unity3d
 			var count = Execute(query);
 
 			if (count == 0)
-			{ //Possible bug: This always seems to return 0?
-			  // Table already exists, migrate it
+				//Possible bug: This always seems to return 0?
+				// Table already exists, migrate it
 				MigrateTable(map);
-			}
 
 			var indexes = new Dictionary<string, IndexInfo>();
 			foreach (var c in map.Columns)
+			foreach (var i in c.Indices)
 			{
-				foreach (var i in c.Indices)
+				var iname = i.Name ?? map.TableName + "_" + c.Name;
+				IndexInfo iinfo;
+				if (!indexes.TryGetValue(iname, out iinfo))
 				{
-					var iname = i.Name ?? map.TableName + "_" + c.Name;
-					IndexInfo iinfo;
-					if (!indexes.TryGetValue(iname, out iinfo))
+					iinfo = new IndexInfo
 					{
-						iinfo = new IndexInfo
-						{
-							IndexName = iname,
-							TableName = map.TableName,
-							Unique = i.Unique,
-							Columns = new List<IndexedColumn>()
-						};
-						indexes.Add(iname, iinfo);
-					}
-
-					if (i.Unique != iinfo.Unique)
-						throw new Exception("All the columns in an index must have the same value for their Unique property");
-
-					iinfo.Columns.Add(new IndexedColumn
-					{
-						Order = i.Order,
-						ColumnName = c.Name
-					});
+						IndexName = iname,
+						TableName = map.TableName,
+						Unique = i.Unique,
+						Columns = new List<IndexedColumn>()
+					};
+					indexes.Add(iname, iinfo);
 				}
+
+				if (i.Unique != iinfo.Unique)
+					throw new Exception(
+						"All the columns in an index must have the same value for their Unique property");
+
+				iinfo.Columns.Add(new IndexedColumn { Order = i.Order, ColumnName = c.Name });
 			}
 
 			foreach (var indexName in indexes.Keys)
@@ -435,7 +418,7 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates an index for the specified table and columns.
+		///     Creates an index for the specified table and columns.
 		/// </summary>
 		/// <param name="indexName">Name of the index to create</param>
 		/// <param name="tableName">Name of the database table</param>
@@ -444,12 +427,13 @@ namespace SQLite4Unity3d
 		public int CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
 		{
 			const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-			var sql = String.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "", indexName);
+			var sql = string.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "",
+				indexName);
 			return Execute(sql);
 		}
 
 		/// <summary>
-		/// Creates an index for the specified table and column.
+		///     Creates an index for the specified table and column.
 		/// </summary>
 		/// <param name="indexName">Name of the index to create</param>
 		/// <param name="tableName">Name of the database table</param>
@@ -457,11 +441,11 @@ namespace SQLite4Unity3d
 		/// <param name="unique">Whether the index should be unique</param>
 		public int CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
 		{
-			return CreateIndex(indexName, tableName, new string[] { columnName }, unique);
+			return CreateIndex(indexName, tableName, new[] { columnName }, unique);
 		}
 
 		/// <summary>
-		/// Creates an index for the specified table and column.
+		///     Creates an index for the specified table and column.
 		/// </summary>
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnName">Name of the column to index</param>
@@ -472,7 +456,7 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates an index for the specified table and columns.
+		///     Creates an index for the specified table and columns.
 		/// </summary>
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnNames">An array of column names to index</param>
@@ -483,8 +467,8 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates an index for the specified object property.
-		/// e.g. CreateIndex<Client>(c => c.Name);
+		///     Creates an index for the specified object property.
+		///     e.g. CreateIndex<Client>(c => c.Name);
 		/// </summary>
 		/// <typeparam name="T">Type to reflect to a database table.</typeparam>
 		/// <param name="property">Property to index</param>
@@ -493,18 +477,12 @@ namespace SQLite4Unity3d
 		{
 			MemberExpression mx;
 			if (property.Body.NodeType == ExpressionType.Convert)
-			{
 				mx = ((UnaryExpression)property.Body).Operand as MemberExpression;
-			}
 			else
-			{
-				mx = (property.Body as MemberExpression);
-			}
+				mx = property.Body as MemberExpression;
 			var propertyInfo = mx.Member as PropertyInfo;
 			if (propertyInfo == null)
-			{
 				throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
-			}
 
 			var propName = propertyInfo.Name;
 
@@ -514,35 +492,13 @@ namespace SQLite4Unity3d
 			CreateIndex(map.TableName, colName, unique);
 		}
 
-		public class ColumnInfo
-		{
-			//			public int cid { get; set; }
-
-			[Column("name")]
-			public string Name { get; set; }
-
-			//			[Column ("type")]
-			//			public string ColumnType { get; set; }
-
-			public int notnull { get; set; }
-
-			//			public string dflt_value { get; set; }
-
-			//			public int pk { get; set; }
-
-			public override string ToString()
-			{
-				return Name;
-			}
-		}
-
 		public List<ColumnInfo> GetTableInfo(string tableName)
 		{
 			var query = "pragma table_info(\"" + tableName + "\")";
 			return Query<ColumnInfo>(query);
 		}
 
-		void MigrateTable(TableMapping map)
+		private void MigrateTable(TableMapping map)
 		{
 			var existingCols = GetTableInfo(map.TableName);
 
@@ -553,14 +509,12 @@ namespace SQLite4Unity3d
 				var found = false;
 				foreach (var c in existingCols)
 				{
-					found = (string.Compare(p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
+					found = string.Compare(p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0;
 					if (found)
 						break;
 				}
-				if (!found)
-				{
-					toBeAdded.Add(p);
-				}
+
+				if (!found) toBeAdded.Add(p);
 			}
 
 			foreach (var p in toBeAdded)
@@ -571,26 +525,26 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates a new SQLiteCommand. Can be overridden to provide a sub-class.
+		///     Creates a new SQLiteCommand. Can be overridden to provide a sub-class.
 		/// </summary>
-		/// <seealso cref="SQLiteCommand.OnInstanceCreated"/>
+		/// <seealso cref="SQLiteCommand.OnInstanceCreated" />
 		protected virtual SQLiteCommand NewCommand()
 		{
 			return new SQLiteCommand(this);
 		}
 
 		/// <summary>
-		/// Creates a new SQLiteCommand given the command text with arguments. Place a '?'
-		/// in the command text for each of the arguments.
+		///     Creates a new SQLiteCommand given the command text with arguments. Place a '?'
+		///     in the command text for each of the arguments.
 		/// </summary>
 		/// <param name="cmdText">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the command text.
+		///     Arguments to substitute for the occurences of '?' in the command text.
 		/// </param>
 		/// <returns>
-		/// A <see cref="SQLiteCommand"/>
+		///     A <see cref="SQLiteCommand" />
 		/// </returns>
 		public SQLiteCommand CreateCommand(string cmdText, params object[] ps)
 		{
@@ -599,29 +553,26 @@ namespace SQLite4Unity3d
 
 			var cmd = NewCommand();
 			cmd.CommandText = cmdText;
-			foreach (var o in ps)
-			{
-				cmd.Bind(o);
-			}
+			foreach (var o in ps) cmd.Bind(o);
 			return cmd;
 		}
 
 		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// Use this method instead of Query when you don't expect rows back. Such cases include
-		/// INSERTs, UPDATEs, and DELETEs.
-		/// You can set the Trace or TimeExecution properties of the connection
-		/// to profile execution.
+		///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		///     in the command text for each of the arguments and then executes that command.
+		///     Use this method instead of Query when you don't expect rows back. Such cases include
+		///     INSERTs, UPDATEs, and DELETEs.
+		///     You can set the Trace or TimeExecution properties of the connection
+		///     to profile execution.
 		/// </summary>
 		/// <param name="query">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
+		///     Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// The number of rows modified in the database as a result of this execution.
+		///     The number of rows modified in the database as a result of this execution.
 		/// </returns>
 		public int Execute(string query, params object[] args)
 		{
@@ -629,10 +580,7 @@ namespace SQLite4Unity3d
 
 			if (TimeExecution)
 			{
-				if (_sw == null)
-				{
-					_sw = new Stopwatch();
-				}
+				if (_sw == null) _sw = new Stopwatch();
 				_sw.Reset();
 				_sw.Start();
 			}
@@ -643,7 +591,8 @@ namespace SQLite4Unity3d
 			{
 				_sw.Stop();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine(string.Format("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				Debug.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds,
+					_elapsedMilliseconds / 1000.0);
 			}
 
 			return r;
@@ -655,10 +604,7 @@ namespace SQLite4Unity3d
 
 			if (TimeExecution)
 			{
-				if (_sw == null)
-				{
-					_sw = new Stopwatch();
-				}
+				if (_sw == null) _sw = new Stopwatch();
 				_sw.Reset();
 				_sw.Start();
 			}
@@ -669,26 +615,27 @@ namespace SQLite4Unity3d
 			{
 				_sw.Stop();
 				_elapsedMilliseconds += _sw.ElapsedMilliseconds;
-				Debug.WriteLine(string.Format("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds, _elapsedMilliseconds / 1000.0));
+				Debug.WriteLine("Finished in {0} ms ({1:0.0} s total)", _sw.ElapsedMilliseconds,
+					_elapsedMilliseconds / 1000.0);
 			}
 
 			return r;
 		}
 
 		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// It returns each row of the result using the mapping automatically generated for
-		/// the given type.
+		///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		///     in the command text for each of the arguments and then executes that command.
+		///     It returns each row of the result using the mapping automatically generated for
+		///     the given type.
 		/// </summary>
 		/// <param name="query">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
+		///     Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
+		///     An enumerable with one result for each row returned by the query.
 		/// </returns>
 		public List<T> Query<T>(string query, params object[] args) where T : new()
 		{
@@ -697,21 +644,21 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// It returns each row of the result using the mapping automatically generated for
-		/// the given type.
+		///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		///     in the command text for each of the arguments and then executes that command.
+		///     It returns each row of the result using the mapping automatically generated for
+		///     the given type.
 		/// </summary>
 		/// <param name="query">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
+		///     Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
-		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
-		/// connection must remain open for the lifetime of the enumerator.
+		///     An enumerable with one result for each row returned by the query.
+		///     The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		///     connection must remain open for the lifetime of the enumerator.
 		/// </returns>
 		public IEnumerable<T> DeferredQuery<T>(string query, params object[] args) where T : new()
 		{
@@ -720,24 +667,24 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// It returns each row of the result using the specified mapping. This function is
-		/// only used by libraries in order to query the database via introspection. It is
-		/// normally not used.
+		///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		///     in the command text for each of the arguments and then executes that command.
+		///     It returns each row of the result using the specified mapping. This function is
+		///     only used by libraries in order to query the database via introspection. It is
+		///     normally not used.
 		/// </summary>
 		/// <param name="map">
-		/// A <see cref="TableMapping"/> to use to convert the resulting rows
-		/// into objects.
+		///     A <see cref="TableMapping" /> to use to convert the resulting rows
+		///     into objects.
 		/// </param>
 		/// <param name="query">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
+		///     Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
+		///     An enumerable with one result for each row returned by the query.
 		/// </returns>
 		public List<object> Query(TableMapping map, string query, params object[] args)
 		{
@@ -746,26 +693,26 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
-		/// in the command text for each of the arguments and then executes that command.
-		/// It returns each row of the result using the specified mapping. This function is
-		/// only used by libraries in order to query the database via introspection. It is
-		/// normally not used.
+		///     Creates a SQLiteCommand given the command text (SQL) with arguments. Place a '?'
+		///     in the command text for each of the arguments and then executes that command.
+		///     It returns each row of the result using the specified mapping. This function is
+		///     only used by libraries in order to query the database via introspection. It is
+		///     normally not used.
 		/// </summary>
 		/// <param name="map">
-		/// A <see cref="TableMapping"/> to use to convert the resulting rows
-		/// into objects.
+		///     A <see cref="TableMapping" /> to use to convert the resulting rows
+		///     into objects.
 		/// </param>
 		/// <param name="query">
-		/// The fully escaped SQL.
+		///     The fully escaped SQL.
 		/// </param>
 		/// <param name="args">
-		/// Arguments to substitute for the occurences of '?' in the query.
+		///     Arguments to substitute for the occurences of '?' in the query.
 		/// </param>
 		/// <returns>
-		/// An enumerable with one result for each row returned by the query.
-		/// The enumerator will call sqlite3_step on each call to MoveNext, so the database
-		/// connection must remain open for the lifetime of the enumerator.
+		///     An enumerable with one result for each row returned by the query.
+		///     The enumerator will call sqlite3_step on each call to MoveNext, so the database
+		///     connection must remain open for the lifetime of the enumerator.
 		/// </returns>
 		public IEnumerable<object> DeferredQuery(TableMapping map, string query, params object[] args)
 		{
@@ -774,11 +721,11 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Returns a queryable interface to the table represented by the given type.
+		///     Returns a queryable interface to the table represented by the given type.
 		/// </summary>
 		/// <returns>
-		/// A queryable object that is able to translate Where, OrderBy, and Take
-		/// queries into native SQL.
+		///     A queryable object that is able to translate Where, OrderBy, and Take
+		///     queries into native SQL.
 		/// </returns>
 		public TableQuery<T> Table<T>() where T : new()
 		{
@@ -786,16 +733,16 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Attempts to retrieve an object with the given primary key from the table
-		/// associated with the specified type. Use of this method requires that
-		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		///     Attempts to retrieve an object with the given primary key from the table
+		///     associated with the specified type. Use of this method requires that
+		///     the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
 		/// </summary>
 		/// <param name="pk">
-		/// The primary key.
+		///     The primary key.
 		/// </param>
 		/// <returns>
-		/// The object with the given primary key. Throws a not found exception
-		/// if the object is not found.
+		///     The object with the given primary key. Throws a not found exception
+		///     if the object is not found.
 		/// </returns>
 		public T Get<T>(object pk) where T : new()
 		{
@@ -804,15 +751,15 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Attempts to retrieve the first object that matches the predicate from the table
-		/// associated with the specified type. 
+		///     Attempts to retrieve the first object that matches the predicate from the table
+		///     associated with the specified type.
 		/// </summary>
 		/// <param name="predicate">
-		/// A predicate for which object to find.
+		///     A predicate for which object to find.
 		/// </param>
 		/// <returns>
-		/// The object that matches the given predicate. Throws a not found exception
-		/// if the object is not found.
+		///     The object that matches the given predicate. Throws a not found exception
+		///     if the object is not found.
 		/// </returns>
 		public T Get<T>(Expression<Func<T, bool>> predicate) where T : new()
 		{
@@ -820,16 +767,16 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Attempts to retrieve an object with the given primary key from the table
-		/// associated with the specified type. Use of this method requires that
-		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		///     Attempts to retrieve an object with the given primary key from the table
+		///     associated with the specified type. Use of this method requires that
+		///     the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
 		/// </summary>
 		/// <param name="pk">
-		/// The primary key.
+		///     The primary key.
 		/// </param>
 		/// <returns>
-		/// The object with the given primary key or null
-		/// if the object is not found.
+		///     The object with the given primary key or null
+		///     if the object is not found.
 		/// </returns>
 		public T Find<T>(object pk) where T : new()
 		{
@@ -838,19 +785,19 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Attempts to retrieve an object with the given primary key from the table
-		/// associated with the specified type. Use of this method requires that
-		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		///     Attempts to retrieve an object with the given primary key from the table
+		///     associated with the specified type. Use of this method requires that
+		///     the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
 		/// </summary>
 		/// <param name="pk">
-		/// The primary key.
+		///     The primary key.
 		/// </param>
 		/// <param name="map">
-		/// The TableMapping used to identify the object type.
+		///     The TableMapping used to identify the object type.
 		/// </param>
 		/// <returns>
-		/// The object with the given primary key or null
-		/// if the object is not found.
+		///     The object with the given primary key or null
+		///     if the object is not found.
 		/// </returns>
 		public object Find(object pk, TableMapping map)
 		{
@@ -858,15 +805,15 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Attempts to retrieve the first object that matches the predicate from the table
-		/// associated with the specified type. 
+		///     Attempts to retrieve the first object that matches the predicate from the table
+		///     associated with the specified type.
 		/// </summary>
 		/// <param name="predicate">
-		/// A predicate for which object to find.
+		///     A predicate for which object to find.
 		/// </param>
 		/// <returns>
-		/// The object that matches the given predicate or null
-		/// if the object is not found.
+		///     The object that matches the given predicate or null
+		///     if the object is not found.
 		/// </returns>
 		public T Find<T>(Expression<Func<T, bool>> predicate) where T : new()
 		{
@@ -874,15 +821,7 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
-		/// </summary>
-		public bool IsInTransaction
-		{
-			get { return _transactionDepth > 0; }
-		}
-
-		/// <summary>
-		/// Begins a new transaction. Call <see cref="Commit"/> to end the transaction.
+		///     Begins a new transaction. Call <see cref="Commit" /> to end the transaction.
 		/// </summary>
 		/// <example cref="System.InvalidOperationException">Throws if a transaction has already begun.</example>
 		public void BeginTransaction(bool exclusive = false)
@@ -894,23 +833,17 @@ namespace SQLite4Unity3d
 			// Rather than crash with an error, we will just ignore calls to BeginTransaction
 			//    that would result in an error.
 			if (Interlocked.CompareExchange(ref _transactionDepth, 1, 0) == 0)
-			{
 				try
 				{
 					if (exclusive)
-					{
 						Execute("BEGIN EXCLUSIVE TRANSACTION;");
-					}
 					else
-					{
 						Execute("begin transaction");
-					}
 				}
 				catch (Exception ex)
 				{
 					var sqlExp = ex as SQLiteException;
 					if (sqlExp != null)
-					{
 						// It is recommended that applications respond to the errors listed below 
 						//    by explicitly issuing a ROLLBACK command.
 						// TODO: This rollback failsafe should be localized to all throw sites.
@@ -924,37 +857,30 @@ namespace SQLite4Unity3d
 								RollbackTo(null, true);
 								break;
 						}
-					}
 					else
-					{
 						// Call decrement and not VolatileWrite in case we've already 
 						//    created a transaction point in SaveTransactionPoint since the catch.
 						Interlocked.Decrement(ref _transactionDepth);
-					}
 
 					throw;
 				}
-			}
 			else
-			{
 				// Calling BeginTransaction on an already open transaction is invalid
 				throw new InvalidOperationException("Cannot begin a transaction while already in a transaction.");
-			}
 		}
 
 		/// <summary>
-		/// Creates a savepoint in the database at the current point in the transaction timeline.
-		/// Begins a new transaction if one is not in progress.
-		/// 
-		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
-		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
-		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
+		///     Creates a savepoint in the database at the current point in the transaction timeline.
+		///     Begins a new transaction if one is not in progress.
+		///     Call <see cref="RollbackTo" /> to undo transactions since the returned savepoint.
+		///     Call <see cref="Release" /> to commit transactions after the savepoint returned here.
+		///     Call <see cref="Commit" /> to end the transaction, committing all changes.
 		/// </summary>
 		/// <returns>A string naming the savepoint.</returns>
 		public string SaveTransactionPoint()
 		{
-			int depth = Interlocked.Increment(ref _transactionDepth) - 1;
-			string retVal = "S" + _rand.Next(short.MaxValue) + "D" + depth;
+			var depth = Interlocked.Increment(ref _transactionDepth) - 1;
+			var retVal = "S" + _rand.Next(short.MaxValue) + "D" + depth;
 
 			try
 			{
@@ -964,7 +890,6 @@ namespace SQLite4Unity3d
 			{
 				var sqlExp = ex as SQLiteException;
 				if (sqlExp != null)
-				{
 					// It is recommended that applications respond to the errors listed below 
 					//    by explicitly issuing a ROLLBACK command.
 					// TODO: This rollback failsafe should be localized to all throw sites.
@@ -978,11 +903,8 @@ namespace SQLite4Unity3d
 							RollbackTo(null, true);
 							break;
 					}
-				}
 				else
-				{
 					Interlocked.Decrement(ref _transactionDepth);
-				}
 
 				throw;
 			}
@@ -991,7 +913,8 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/> or <see cref="SaveTransactionPoint"/>.
+		///     Rolls back the transaction that was begun by <see cref="BeginTransaction" /> or <see cref="SaveTransactionPoint" />
+		///     .
 		/// </summary>
 		public void Rollback()
 		{
@@ -999,30 +922,30 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
+		///     Rolls back the savepoint created by <see cref="BeginTransaction" /> or SaveTransactionPoint.
 		/// </summary>
-		/// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>.  If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/></param>
+		/// <param name="savepoint">
+		///     The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint" />.
+		///     If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback" />
+		/// </param>
 		public void RollbackTo(string savepoint)
 		{
 			RollbackTo(savepoint, false);
 		}
 
 		/// <summary>
-		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/>.
+		///     Rolls back the transaction that was begun by <see cref="BeginTransaction" />.
 		/// </summary>
 		/// <param name="noThrow">true to avoid throwing exceptions, false otherwise</param>
-		void RollbackTo(string savepoint, bool noThrow)
+		private void RollbackTo(string savepoint, bool noThrow)
 		{
 			// Rolling back without a TO clause rolls backs all transactions 
 			//    and leaves the transaction stack empty.   
 			try
 			{
-				if (String.IsNullOrEmpty(savepoint))
+				if (string.IsNullOrEmpty(savepoint))
 				{
-					if (Interlocked.Exchange(ref _transactionDepth, 0) > 0)
-					{
-						Execute("rollback");
-					}
+					if (Interlocked.Exchange(ref _transactionDepth, 0) > 0) Execute("rollback");
 				}
 				else
 				{
@@ -1033,33 +956,33 @@ namespace SQLite4Unity3d
 			{
 				if (!noThrow)
 					throw;
-
 			}
 			// No need to rollback if there are no transactions open.
 		}
 
 		/// <summary>
-		/// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint 
-		///    makes changes since that savepoint permanent if the savepoint began the transaction,
-		///    or otherwise the changes are permanent pending a call to <see cref="Commit"/>.
-		/// 
-		/// The RELEASE command is like a COMMIT for a SAVEPOINT.
+		///     Releases a savepoint returned from <see cref="SaveTransactionPoint" />.  Releasing a savepoint
+		///     makes changes since that savepoint permanent if the savepoint began the transaction,
+		///     or otherwise the changes are permanent pending a call to <see cref="Commit" />.
+		///     The RELEASE command is like a COMMIT for a SAVEPOINT.
 		/// </summary>
-		/// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
+		/// <param name="savepoint">
+		///     The name of the savepoint to release.  The string should be the result of a call to
+		///     <see cref="SaveTransactionPoint" />
+		/// </param>
 		public void Release(string savepoint)
 		{
 			DoSavePointExecute(savepoint, "release ");
 		}
 
-		void DoSavePointExecute(string savepoint, string cmd)
+		private void DoSavePointExecute(string savepoint, string cmd)
 		{
 			// Validate the savepoint
-			int firstLen = savepoint.IndexOf('D');
+			var firstLen = savepoint.IndexOf('D');
 			if (firstLen >= 2 && savepoint.Length > firstLen + 1)
 			{
 				int depth;
-				if (Int32.TryParse(savepoint.Substring(firstLen + 1), out depth))
-				{
+				if (int.TryParse(savepoint.Substring(firstLen + 1), out depth))
 					// TODO: Mild race here, but inescapable without locking almost everywhere.
 					if (0 <= depth && depth < _transactionDepth)
 					{
@@ -1073,34 +996,35 @@ namespace SQLite4Unity3d
 						Execute(cmd + savepoint);
 						return;
 					}
-				}
 			}
 
-			throw new ArgumentException("savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
+			throw new ArgumentException(
+				"savePoint is not valid, and should be the result of a call to SaveTransactionPoint.", "savePoint");
 		}
 
 		/// <summary>
-		/// Commits the transaction that was begun by <see cref="BeginTransaction"/>.
+		///     Commits the transaction that was begun by <see cref="BeginTransaction" />.
 		/// </summary>
 		public void Commit()
 		{
-			if (Interlocked.Exchange(ref _transactionDepth, 0) != 0)
-			{
-				Execute("commit");
-			}
+			if (Interlocked.Exchange(ref _transactionDepth, 0) != 0) Execute("commit");
 			// Do nothing on a commit with no open transaction
 		}
 
 		/// <summary>
-		/// Executes <param name="action"> within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
-		/// exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
-		/// is rethrown.
+		///     Executes
+		///     <param name="action">
+		///         within a (possibly nested) transaction by wrapping it in a SAVEPOINT. If an
+		///         exception occurs the whole transaction is rolled back, not just the current savepoint. The exception
+		///         is rethrown.
 		/// </summary>
 		/// <param name="action">
-		/// The <see cref="Action"/> to perform within a transaction. <param name="action"> can contain any number
-		/// of operations on the connection but should never call <see cref="BeginTransaction"/> or
-		/// <see cref="Commit"/>.
-		/// </param>
+		///     The <see cref="Action" /> to perform within a transaction.
+		///     <param name="action">
+		///         can contain any number
+		///         of operations on the connection but should never call <see cref="BeginTransaction" /> or
+		///         <see cref="Commit" />.
+		///     </param>
 		public void RunInTransaction(Action action)
 		{
 			try
@@ -1117,130 +1041,115 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Inserts all specified objects.
+		///     Inserts all specified objects.
 		/// </summary>
 		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
+		///     An <see cref="IEnumerable" /> of the objects to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
-		public int InsertAll(System.Collections.IEnumerable objects)
+		public int InsertAll(IEnumerable objects)
 		{
 			var c = 0;
 			RunInTransaction(() =>
 			{
-				foreach (var r in objects)
-				{
-					c += Insert(r);
-				}
+				foreach (var r in objects) c += Insert(r);
 			});
 			return c;
 		}
 
 		/// <summary>
-		/// Inserts all specified objects.
+		///     Inserts all specified objects.
 		/// </summary>
 		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
+		///     An <see cref="IEnumerable" /> of the objects to insert.
 		/// </param>
 		/// <param name="extra">
-		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		///     Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
-		public int InsertAll(System.Collections.IEnumerable objects, string extra)
+		public int InsertAll(IEnumerable objects, string extra)
 		{
 			var c = 0;
 			RunInTransaction(() =>
 			{
-				foreach (var r in objects)
-				{
-					c += Insert(r, extra);
-				}
+				foreach (var r in objects) c += Insert(r, extra);
 			});
 			return c;
 		}
 
 		/// <summary>
-		/// Inserts all specified objects.
+		///     Inserts all specified objects.
 		/// </summary>
 		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
+		///     An <see cref="IEnumerable" /> of the objects to insert.
 		/// </param>
 		/// <param name="objType">
-		/// The type of object to insert.
+		///     The type of object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
-		public int InsertAll(System.Collections.IEnumerable objects, Type objType)
+		public int InsertAll(IEnumerable objects, Type objType)
 		{
 			var c = 0;
 			RunInTransaction(() =>
 			{
-				foreach (var r in objects)
-				{
-					c += Insert(r, objType);
-				}
+				foreach (var r in objects) c += Insert(r, objType);
 			});
 			return c;
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
 		public int Insert(object obj)
 		{
-			if (obj == null)
-			{
-				return 0;
-			}
+			if (obj == null) return 0;
 			return Insert(obj, "", obj.GetType());
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
-		/// If a UNIQUE constraint violation occurs with
-		/// some pre-existing object, this function deletes
-		/// the old object.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
+		///     If a UNIQUE constraint violation occurs with
+		///     some pre-existing object, this function deletes
+		///     the old object.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows modified.
+		///     The number of rows modified.
 		/// </returns>
 		public int InsertOrReplace(object obj)
 		{
-			if (obj == null)
-			{
-				return 0;
-			}
+			if (obj == null) return 0;
 			return Insert(obj, "OR REPLACE", obj.GetType());
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <param name="objType">
-		/// The type of object to insert.
+		///     The type of object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
 		public int Insert(object obj, Type objType)
 		{
@@ -1248,20 +1157,20 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
-		/// If a UNIQUE constraint violation occurs with
-		/// some pre-existing object, this function deletes
-		/// the old object.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
+		///     If a UNIQUE constraint violation occurs with
+		///     some pre-existing object, this function deletes
+		///     the old object.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <param name="objType">
-		/// The type of object to insert.
+		///     The type of object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows modified.
+		///     The number of rows modified.
 		/// </returns>
 		public int InsertOrReplace(object obj, Type objType)
 		{
@@ -1269,49 +1178,43 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <param name="extra">
-		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		///     Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
 		public int Insert(object obj, string extra)
 		{
-			if (obj == null)
-			{
-				return 0;
-			}
+			if (obj == null) return 0;
 			return Insert(obj, extra, obj.GetType());
 		}
 
 		/// <summary>
-		/// Inserts the given object and retrieves its
-		/// auto incremented primary key if it has one.
+		///     Inserts the given object and retrieves its
+		///     auto incremented primary key if it has one.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to insert.
+		///     The object to insert.
 		/// </param>
 		/// <param name="extra">
-		/// Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
+		///     Literal SQL code that gets placed into the command. INSERT {extra} INTO ...
 		/// </param>
 		/// <param name="objType">
-		/// The type of object to insert.
+		///     The type of object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows added to the table.
+		///     The number of rows added to the table.
 		/// </returns>
 		public int Insert(object obj, string extra, Type objType)
 		{
-			if (obj == null || objType == null)
-			{
-				return 0;
-			}
+			if (obj == null || objType == null) return 0;
 
 
 			var map = GetMapping(objType);
@@ -1342,12 +1245,8 @@ namespace SQLite4Unity3d
 			{
 				var prop = objType.GetProperty(map.PK.PropertyName);
 				if (prop != null)
-				{
 					if (prop.GetValue(obj, null).Equals(Guid.Empty))
-					{
 						prop.SetValue(obj, Guid.NewGuid(), null);
-					}
-				}
 			}
 #endif
 
@@ -1356,10 +1255,7 @@ namespace SQLite4Unity3d
 
 			var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
 			var vals = new object[cols.Length];
-			for (var i = 0; i < vals.Length; i++)
-			{
-				vals[i] = cols[i].GetValue(obj);
-			}
+			for (var i = 0; i < vals.Length; i++) vals[i] = cols[i].GetValue(obj);
 
 			var insertCmd = map.GetInsertCommand(this, extra);
 			int count;
@@ -1370,11 +1266,8 @@ namespace SQLite4Unity3d
 			}
 			catch (SQLiteException ex)
 			{
-
-				if (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-				{
+				if (SQLite3.ExtendedErrCode(Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
 					throw NotNullConstraintViolationException.New(ex.Result, ex.Message, map, obj);
-				}
 				throw;
 			}
 
@@ -1388,65 +1281,57 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Updates all of the columns of a table using the specified object
-		/// except for its primary key.
-		/// The object is required to have a primary key.
+		///     Updates all of the columns of a table using the specified object
+		///     except for its primary key.
+		///     The object is required to have a primary key.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		///     The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <returns>
-		/// The number of rows updated.
+		///     The number of rows updated.
 		/// </returns>
 		public int Update(object obj)
 		{
-			if (obj == null)
-			{
-				return 0;
-			}
+			if (obj == null) return 0;
 			return Update(obj, obj.GetType());
 		}
 
 		/// <summary>
-		/// Updates all of the columns of a table using the specified object
-		/// except for its primary key.
-		/// The object is required to have a primary key.
+		///     Updates all of the columns of a table using the specified object
+		///     except for its primary key.
+		///     The object is required to have a primary key.
 		/// </summary>
 		/// <param name="obj">
-		/// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
+		///     The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <param name="objType">
-		/// The type of object to insert.
+		///     The type of object to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows updated.
+		///     The number of rows updated.
 		/// </returns>
 		public int Update(object obj, Type objType)
 		{
-			int rowsAffected = 0;
-			if (obj == null || objType == null)
-			{
-				return 0;
-			}
+			var rowsAffected = 0;
+			if (obj == null || objType == null) return 0;
 
 			var map = GetMapping(objType);
 
 			var pk = map.PK;
 
-			if (pk == null)
-			{
-				throw new NotSupportedException("Cannot update " + map.TableName + ": it has no PK");
-			}
+			if (pk == null) throw new NotSupportedException("Cannot update " + map.TableName + ": it has no PK");
 
 			var cols = from p in map.Columns
-					   where p != pk
-					   select p;
+				where p != pk
+				select p;
 			var vals = from c in cols
-					   select c.GetValue(obj);
+				select c.GetValue(obj);
 			var ps = new List<object>(vals);
 			ps.Add(pk.GetValue(obj));
-			var q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join(",", (from c in cols
-																											select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);
+			var q = string.Format("update \"{0}\" set {1} where {2} = ? ", map.TableName, string.Join(",",
+				(from c in cols
+					select "\"" + c.Name + "\" = ? ").ToArray()), pk.Name);
 
 			try
 			{
@@ -1454,11 +1339,9 @@ namespace SQLite4Unity3d
 			}
 			catch (SQLiteException ex)
 			{
-
-				if (ex.Result == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-				{
+				if (ex.Result == SQLite3.Result.Constraint &&
+				    SQLite3.ExtendedErrCode(Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
 					throw NotNullConstraintViolationException.New(ex, map, obj);
-				}
 
 				throw ex;
 			}
@@ -1467,82 +1350,73 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Updates all specified objects.
+		///     Updates all specified objects.
 		/// </summary>
 		/// <param name="objects">
-		/// An <see cref="IEnumerable"/> of the objects to insert.
+		///     An <see cref="IEnumerable" /> of the objects to insert.
 		/// </param>
 		/// <returns>
-		/// The number of rows modified.
+		///     The number of rows modified.
 		/// </returns>
-		public int UpdateAll(System.Collections.IEnumerable objects)
+		public int UpdateAll(IEnumerable objects)
 		{
 			var c = 0;
 			RunInTransaction(() =>
 			{
-				foreach (var r in objects)
-				{
-					c += Update(r);
-				}
+				foreach (var r in objects) c += Update(r);
 			});
 			return c;
 		}
 
 		/// <summary>
-		/// Deletes the given object from the database using its primary key.
+		///     Deletes the given object from the database using its primary key.
 		/// </summary>
 		/// <param name="objectToDelete">
-		/// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
+		///     The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
 		/// </param>
 		/// <returns>
-		/// The number of rows deleted.
+		///     The number of rows deleted.
 		/// </returns>
 		public int Delete(object objectToDelete)
 		{
 			var map = GetMapping(objectToDelete.GetType());
 			var pk = map.PK;
-			if (pk == null)
-			{
-				throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
-			}
+			if (pk == null) throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
 			var q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
 			return Execute(q, pk.GetValue(objectToDelete));
 		}
 
 		/// <summary>
-		/// Deletes the object with the specified primary key.
+		///     Deletes the object with the specified primary key.
 		/// </summary>
 		/// <param name="primaryKey">
-		/// The primary key of the object to delete.
+		///     The primary key of the object to delete.
 		/// </param>
 		/// <returns>
-		/// The number of objects deleted.
+		///     The number of objects deleted.
 		/// </returns>
 		/// <typeparam name='T'>
-		/// The type of object.
+		///     The type of object.
 		/// </typeparam>
 		public int Delete<T>(object primaryKey)
 		{
 			var map = GetMapping(typeof(T));
 			var pk = map.PK;
-			if (pk == null)
-			{
-				throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
-			}
+			if (pk == null) throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
 			var q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
 			return Execute(q, primaryKey);
 		}
 
 		/// <summary>
-		/// Deletes all the objects from the specified table.
-		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
-		/// specified table. Do you really want to do that?
+		///     Deletes all the objects from the specified table.
+		///     WARNING WARNING: Let me repeat. It deletes ALL the objects from the
+		///     specified table. Do you really want to do that?
 		/// </summary>
 		/// <returns>
-		/// The number of objects deleted.
+		///     The number of objects deleted.
 		/// </returns>
 		/// <typeparam name='T'>
-		/// The type of objects to delete.
+		///     The type of objects to delete.
 		/// </typeparam>
 		public int DeleteAll<T>()
 		{
@@ -1556,12 +1430,6 @@ namespace SQLite4Unity3d
 			Dispose(false);
 		}
 
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
 		protected virtual void Dispose(bool disposing)
 		{
 			Close();
@@ -1570,20 +1438,15 @@ namespace SQLite4Unity3d
 		public void Close()
 		{
 			if (_open && Handle != NullHandle)
-			{
 				try
 				{
 					if (_mappings != null)
-					{
 						foreach (var sqlInsertCommand in _mappings.Values)
-						{
 							sqlInsertCommand.Dispose();
-						}
-					}
 					var r = SQLite3.Close(Handle);
 					if (r != SQLite3.Result.OK)
 					{
-						string msg = SQLite3.GetErrmsg(Handle);
+						var msg = SQLite3.GetErrmsg(Handle);
 						throw SQLiteException.New(r, msg);
 					}
 				}
@@ -1592,14 +1455,48 @@ namespace SQLite4Unity3d
 					Handle = NullHandle;
 					_open = false;
 				}
+		}
+
+		private struct IndexedColumn
+		{
+			public int Order;
+			public string ColumnName;
+		}
+
+		private struct IndexInfo
+		{
+			public string IndexName;
+			public string TableName;
+			public bool Unique;
+			public List<IndexedColumn> Columns;
+		}
+
+		public class ColumnInfo
+		{
+			//			public int cid { get; set; }
+
+			[Column("name")] public string Name { get; set; }
+
+			//			[Column ("type")]
+			//			public string ColumnType { get; set; }
+
+			public int notnull { get; set; }
+
+			//			public string dflt_value { get; set; }
+
+			//			public int pk { get; set; }
+
+			public override string ToString()
+			{
+				return Name;
 			}
 		}
 	}
 
 	/// <summary>
-	/// Represents a parsed connection string.
+	///     Represents a parsed connection string.
 	/// </summary>
-	class SQLiteConnectionString
+	internal class SQLiteConnectionString
 	{
 		public string ConnectionString { get; private set; }
 		public string DatabasePath { get; private set; }
@@ -1625,23 +1522,23 @@ namespace SQLite4Unity3d
 	[AttributeUsage(AttributeTargets.Class)]
 	public class TableAttribute : Attribute
 	{
-		public string Name { get; set; }
-
 		public TableAttribute(string name)
 		{
 			Name = name;
 		}
+
+		public string Name { get; set; }
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
 	public class ColumnAttribute : Attribute
 	{
-		public string Name { get; set; }
-
 		public ColumnAttribute(string name)
 		{
 			Name = name;
 		}
+
+		public string Name { get; set; }
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
@@ -1657,10 +1554,6 @@ namespace SQLite4Unity3d
 	[AttributeUsage(AttributeTargets.Property)]
 	public class IndexedAttribute : Attribute
 	{
-		public string Name { get; set; }
-		public int Order { get; set; }
-		public virtual bool Unique { get; set; }
-
 		public IndexedAttribute()
 		{
 		}
@@ -1670,6 +1563,10 @@ namespace SQLite4Unity3d
 			Name = name;
 			Order = order;
 		}
+
+		public string Name { get; set; }
+		public int Order { get; set; }
+		public virtual bool Unique { get; set; }
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
@@ -1680,41 +1577,44 @@ namespace SQLite4Unity3d
 	[AttributeUsage(AttributeTargets.Property)]
 	public class UniqueAttribute : IndexedAttribute
 	{
-		public override bool Unique
-		{
-			get { return true; }
-			set { /* throw?  */ }
-		}
-
-		public UniqueAttribute() : base()
+		public UniqueAttribute()
 		{
 		}
 
 		public UniqueAttribute(string name, int order) : base(name, order)
 		{
 		}
+
+		public override bool Unique
+		{
+			get => true;
+			set
+			{
+				/* throw?  */
+			}
+		}
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
 	public class MaxLengthAttribute : Attribute
 	{
-		public int Value { get; private set; }
-
 		public MaxLengthAttribute(int length)
 		{
 			Value = length;
 		}
+
+		public int Value { get; }
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
 	public class CollationAttribute : Attribute
 	{
-		public string Value { get; private set; }
-
 		public CollationAttribute(string collation)
 		{
 			Value = collation;
 		}
+
+		public string Value { get; }
 	}
 
 	[AttributeUsage(AttributeTargets.Property)]
@@ -1724,19 +1624,12 @@ namespace SQLite4Unity3d
 
 	public class TableMapping
 	{
-		public Type MappedType { get; private set; }
+		private readonly Column _autoPk;
+		private Column[] _insertColumns;
 
-		public string TableName { get; private set; }
-
-		public Column[] Columns { get; private set; }
-
-		public Column PK { get; private set; }
-
-		public string GetByPrimaryKeySql { get; private set; }
-
-		Column _autoPk;
-		Column[] _insertColumns;
-		Column[] _insertOrReplaceColumns;
+		private PreparedSqlLiteInsertCommand _insertCommand;
+		private string _insertCommandExtra;
+		private Column[] _insertOrReplaceColumns;
 
 		public TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
@@ -1752,7 +1645,8 @@ namespace SQLite4Unity3d
 			TableName = tableAttr != null ? tableAttr.Name : MappedType.Name;
 
 #if !NETFX_CORE
-			var props = MappedType.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty);
+			var props = MappedType.GetProperties(BindingFlags.Public | BindingFlags.Instance |
+			                                     BindingFlags.SetProperty);
 #else
 			var props = from p in MappedType.GetRuntimeProperties()
 						where ((p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic) || (p.GetMethod != null && p.GetMethod.IsStatic) || (p.SetMethod != null && p.SetMethod.IsStatic))
@@ -1766,55 +1660,42 @@ namespace SQLite4Unity3d
 #else
 				var ignore = p.GetCustomAttributes (typeof(IgnoreAttribute), true).Count() > 0;
 #endif
-				if (p.CanWrite && !ignore)
-				{
-					cols.Add(new Column(p, createFlags));
-				}
+				if (p.CanWrite && !ignore) cols.Add(new Column(p, createFlags));
 			}
+
 			Columns = cols.ToArray();
 			foreach (var c in Columns)
 			{
-				if (c.IsAutoInc && c.IsPK)
-				{
-					_autoPk = c;
-				}
-				if (c.IsPK)
-				{
-					PK = c;
-				}
+				if (c.IsAutoInc && c.IsPK) _autoPk = c;
+				if (c.IsPK) PK = c;
 			}
 
 			HasAutoIncPK = _autoPk != null;
 
 			if (PK != null)
-			{
 				GetByPrimaryKeySql = string.Format("select * from \"{0}\" where \"{1}\" = ?", TableName, PK.Name);
-			}
 			else
-			{
 				// People should not be calling Get/Find without a PK
 				GetByPrimaryKeySql = string.Format("select * from \"{0}\" limit 1", TableName);
-			}
 		}
 
-		public bool HasAutoIncPK { get; private set; }
+		public Type MappedType { get; }
 
-		public void SetAutoIncPK(object obj, long id)
-		{
-			if (_autoPk != null)
-			{
-				_autoPk.SetValue(obj, Convert.ChangeType(id, _autoPk.ColumnType, null));
-			}
-		}
+		public string TableName { get; }
+
+		public Column[] Columns { get; }
+
+		public Column PK { get; }
+
+		public string GetByPrimaryKeySql { get; }
+
+		public bool HasAutoIncPK { get; }
 
 		public Column[] InsertColumns
 		{
 			get
 			{
-				if (_insertColumns == null)
-				{
-					_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray();
-				}
+				if (_insertColumns == null) _insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray();
 				return _insertColumns;
 			}
 		}
@@ -1823,12 +1704,14 @@ namespace SQLite4Unity3d
 		{
 			get
 			{
-				if (_insertOrReplaceColumns == null)
-				{
-					_insertOrReplaceColumns = Columns.ToArray();
-				}
+				if (_insertOrReplaceColumns == null) _insertOrReplaceColumns = Columns.ToArray();
 				return _insertOrReplaceColumns;
 			}
+		}
+
+		public void SetAutoIncPK(object obj, long id)
+		{
+			if (_autoPk != null) _autoPk.SetValue(obj, Convert.ChangeType(id, _autoPk.ColumnType, null));
 		}
 
 		public Column FindColumnWithPropertyName(string propertyName)
@@ -1843,9 +1726,6 @@ namespace SQLite4Unity3d
 			return exact;
 		}
 
-		PreparedSqlLiteInsertCommand _insertCommand;
-		string _insertCommandExtra;
-
 		public PreparedSqlLiteInsertCommand GetInsertCommand(SQLiteConnection conn, string extra)
 		{
 			if (_insertCommand == null)
@@ -1859,10 +1739,11 @@ namespace SQLite4Unity3d
 				_insertCommand = CreateInsertCommand(conn, extra);
 				_insertCommandExtra = extra;
 			}
+
 			return _insertCommand;
 		}
 
-		PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
+		private PreparedSqlLiteInsertCommand CreateInsertCommand(SQLiteConnection conn, string extra)
 		{
 			var cols = InsertColumns;
 			string insertSql;
@@ -1874,17 +1755,13 @@ namespace SQLite4Unity3d
 			{
 				var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
 
-				if (replacing)
-				{
-					cols = InsertOrReplaceColumns;
-				}
+				if (replacing) cols = InsertOrReplaceColumns;
 
 				insertSql = string.Format("insert {3} into \"{0}\"({1}) values ({2})", TableName,
-								   string.Join(",", (from c in cols
-													 select "\"" + c.Name + "\"").ToArray()),
-								   string.Join(",", (from c in cols
-													 select "?").ToArray()), extra);
-
+					string.Join(",", (from c in cols
+						select "\"" + c.Name + "\"").ToArray()),
+					string.Join(",", (from c in cols
+						select "?").ToArray()), extra);
 			}
 
 			var insertCommand = new PreparedSqlLiteInsertCommand(conn);
@@ -1903,26 +1780,7 @@ namespace SQLite4Unity3d
 
 		public class Column
 		{
-			PropertyInfo _prop;
-
-			public string Name { get; private set; }
-
-			public string PropertyName { get { return _prop.Name; } }
-
-			public Type ColumnType { get; private set; }
-
-			public string Collation { get; private set; }
-
-			public bool IsAutoInc { get; private set; }
-			public bool IsAutoGuid { get; private set; }
-
-			public bool IsPK { get; private set; }
-
-			public IEnumerable<IndexedAttribute> Indices { get; set; }
-
-			public bool IsNullable { get; private set; }
-
-			public int? MaxStringLength { get; private set; }
+			private readonly PropertyInfo _prop;
 
 			public Column(PropertyInfo prop, CreateFlags createFlags = CreateFlags.None)
 			{
@@ -1935,25 +1793,43 @@ namespace SQLite4Unity3d
 				Collation = Orm.Collation(prop);
 
 				IsPK = Orm.IsPK(prop) ||
-					(((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK) &&
-					 	string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
+				       ((createFlags & CreateFlags.ImplicitPK) == CreateFlags.ImplicitPK &&
+				        string.Compare(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase) == 0);
 
-				var isAuto = Orm.IsAutoInc(prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+				var isAuto = Orm.IsAutoInc(prop) ||
+				             (IsPK && (createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK);
 				IsAutoGuid = isAuto && ColumnType == typeof(Guid);
-				IsAutoInc = isAuto && !IsAutoGuid || isAuto;
+				IsAutoInc = (isAuto && !IsAutoGuid) || isAuto;
 
 				Indices = Orm.GetIndices(prop);
 				if (!Indices.Any()
-					&& !IsPK
-					&& ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-					&& Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
-					)
-				{
-					Indices = new IndexedAttribute[] { new IndexedAttribute() };
-				}
+				    && !IsPK
+				    && (createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex
+				    && Name.EndsWith(Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
+				   )
+					Indices = new IndexedAttribute[] { new() };
 				IsNullable = !(IsPK || Orm.IsMarkedNotNull(prop));
 				MaxStringLength = Orm.MaxStringLength(prop);
 			}
+
+			public string Name { get; }
+
+			public string PropertyName => _prop.Name;
+
+			public Type ColumnType { get; }
+
+			public string Collation { get; }
+
+			public bool IsAutoInc { get; }
+			public bool IsAutoGuid { get; }
+
+			public bool IsPK { get; }
+
+			public IEnumerable<IndexedAttribute> Indices { get; set; }
+
+			public bool IsNullable { get; }
+
+			public int? MaxStringLength { get; }
 
 			public void SetValue(object obj, object val)
 			{
@@ -1975,24 +1851,12 @@ namespace SQLite4Unity3d
 
 		public static string SqlDecl(TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
-			string decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks) + " ";
+			var decl = "\"" + p.Name + "\" " + SqlType(p, storeDateTimeAsTicks) + " ";
 
-			if (p.IsPK)
-			{
-				decl += "primary key ";
-			}
-			if (p.IsAutoInc)
-			{
-				decl += "autoincrement ";
-			}
-			if (!p.IsNullable)
-			{
-				decl += "not null ";
-			}
-			if (!string.IsNullOrEmpty(p.Collation))
-			{
-				decl += "collate " + p.Collation + " ";
-			}
+			if (p.IsPK) decl += "primary key ";
+			if (p.IsAutoInc) decl += "autoincrement ";
+			if (!p.IsNullable) decl += "not null ";
+			if (!string.IsNullOrEmpty(p.Collation)) decl += "collate " + p.Collation + " ";
 
 			return decl;
 		}
@@ -2000,59 +1864,46 @@ namespace SQLite4Unity3d
 		public static string SqlType(TableMapping.Column p, bool storeDateTimeAsTicks)
 		{
 			var clrType = p.ColumnType;
-			if (clrType == typeof(Boolean) || clrType == typeof(Byte) || clrType == typeof(UInt16) || clrType == typeof(SByte) || clrType == typeof(Int16) || clrType == typeof(Int32))
+			if (clrType == typeof(bool) || clrType == typeof(byte) || clrType == typeof(ushort) ||
+			    clrType == typeof(sbyte) || clrType == typeof(short) || clrType == typeof(int)) return "integer";
+
+			if (clrType == typeof(uint) || clrType == typeof(long)) return "bigint";
+
+			if (clrType == typeof(float) || clrType == typeof(double) || clrType == typeof(decimal)) return "float";
+
+			if (clrType == typeof(string))
 			{
-				return "integer";
-			}
-			else if (clrType == typeof(UInt32) || clrType == typeof(Int64))
-			{
-				return "bigint";
-			}
-			else if (clrType == typeof(Single) || clrType == typeof(Double) || clrType == typeof(Decimal))
-			{
-				return "float";
-			}
-			else if (clrType == typeof(String))
-			{
-				int? len = p.MaxStringLength;
+				var len = p.MaxStringLength;
 
 				if (len.HasValue)
 					return "varchar(" + len.Value + ")";
 
 				return "varchar";
 			}
-			else if (clrType == typeof(TimeSpan))
-			{
-				return "bigint";
-			}
-			else if (clrType == typeof(DateTime))
-			{
-				return storeDateTimeAsTicks ? "bigint" : "datetime";
-			}
-			else if (clrType == typeof(DateTimeOffset))
+
+			if (clrType == typeof(TimeSpan)) return "bigint";
+
+			if (clrType == typeof(DateTime)) return storeDateTimeAsTicks ? "bigint" : "datetime";
+
+			if (clrType == typeof(DateTimeOffset))
 			{
 				return "bigint";
 #if !NETFX_CORE
 			}
-			else if (clrType.IsEnum)
+
+			if (clrType.IsEnum)
 			{
 #else
 			} else if (clrType.GetTypeInfo().IsEnum) {
 #endif
 				return "integer";
 			}
-			else if (clrType == typeof(byte[]))
-			{
+
+			if (clrType == typeof(byte[]))
 				return "blob";
-			}
-			else if (clrType == typeof(Guid))
-			{
+			if (clrType == typeof(Guid))
 				return "varchar(36)";
-			}
-			else
-			{
-				throw new NotSupportedException("Don't know about " + clrType);
-			}
+			throw new NotSupportedException("Don't know about " + clrType);
 		}
 
 		public static bool IsPK(MemberInfo p)
@@ -2077,10 +1928,8 @@ namespace SQLite4Unity3d
                 return ((CollationAttribute)attrs.First()).Value;
 #endif
 			}
-			else
-			{
-				return string.Empty;
-			}
+
+			return string.Empty;
 		}
 
 		public static bool IsAutoInc(MemberInfo p)
@@ -2124,12 +1973,11 @@ namespace SQLite4Unity3d
 		}
 	}
 
-	public partial class SQLiteCommand
+	public class SQLiteCommand
 	{
-		SQLiteConnection _conn;
-		private List<Binding> _bindings;
-
-		public string CommandText { get; set; }
+		internal static IntPtr NegativePointer = new(-1);
+		private readonly List<Binding> _bindings;
+		private readonly SQLiteConnection _conn;
 
 		internal SQLiteCommand(SQLiteConnection conn)
 		{
@@ -2138,12 +1986,11 @@ namespace SQLite4Unity3d
 			CommandText = "";
 		}
 
+		public string CommandText { get; set; }
+
 		public int ExecuteNonQuery()
 		{
-			if (_conn.Trace)
-			{
-				Debug.WriteLine("Executing: " + this);
-			}
+			if (_conn.Trace) Debug.WriteLine("Executing: " + this);
 
 			var r = SQLite3.Result.OK;
 			var stmt = Prepare();
@@ -2151,21 +1998,19 @@ namespace SQLite4Unity3d
 			Finalize(stmt);
 			if (r == SQLite3.Result.Done)
 			{
-				int rowsAffected = SQLite3.Changes(_conn.Handle);
+				var rowsAffected = SQLite3.Changes(_conn.Handle);
 				return rowsAffected;
 			}
-			else if (r == SQLite3.Result.Error)
+
+			if (r == SQLite3.Result.Error)
 			{
-				string msg = SQLite3.GetErrmsg(_conn.Handle);
+				var msg = SQLite3.GetErrmsg(_conn.Handle);
 				throw SQLiteException.New(r, msg);
 			}
-			else if (r == SQLite3.Result.Constraint)
-			{
+
+			if (r == SQLite3.Result.Constraint)
 				if (SQLite3.ExtendedErrCode(_conn.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-				{
 					throw NotNullConstraintViolationException.New(r, SQLite3.GetErrmsg(_conn.Handle));
-				}
-			}
 
 			throw SQLiteException.New(r, r.ToString());
 		}
@@ -2186,16 +2031,15 @@ namespace SQLite4Unity3d
 		}
 
 		/// <summary>
-		/// Invoked every time an instance is loaded from the database.
+		///     Invoked every time an instance is loaded from the database.
 		/// </summary>
 		/// <param name='obj'>
-		/// The newly created object.
+		///     The newly created object.
 		/// </param>
 		/// <remarks>
-		/// This can be overridden in combination with the <see cref="SQLiteConnection.NewCommand"/>
-		/// method to hook into the life-cycle of objects.
-		///
-		/// Type safety is not possible because MonoTouch does not support virtual generic methods.
+		///     This can be overridden in combination with the <see cref="SQLiteConnection.NewCommand" />
+		///     method to hook into the life-cycle of objects.
+		///     Type safety is not possible because MonoTouch does not support virtual generic methods.
 		/// </remarks>
 		protected virtual void OnInstanceCreated(object obj)
 		{
@@ -2204,17 +2048,14 @@ namespace SQLite4Unity3d
 
 		public IEnumerable<T> ExecuteDeferredQuery<T>(TableMapping map)
 		{
-			if (_conn.Trace)
-			{
-				Debug.WriteLine("Executing Query: " + this);
-			}
+			if (_conn.Trace) Debug.WriteLine("Executing Query: " + this);
 
 			var stmt = Prepare();
 			try
 			{
 				var cols = new TableMapping.Column[SQLite3.ColumnCount(stmt)];
 
-				for (int i = 0; i < cols.Length; i++)
+				for (var i = 0; i < cols.Length; i++)
 				{
 					var name = SQLite3.ColumnName16(stmt, i);
 					cols[i] = map.FindColumn(name);
@@ -2223,7 +2064,7 @@ namespace SQLite4Unity3d
 				while (SQLite3.Step(stmt) == SQLite3.Result.Row)
 				{
 					var obj = Activator.CreateInstance(map.MappedType);
-					for (int i = 0; i < cols.Length; i++)
+					for (var i = 0; i < cols.Length; i++)
 					{
 						if (cols[i] == null)
 							continue;
@@ -2231,6 +2072,7 @@ namespace SQLite4Unity3d
 						var val = ReadCol(stmt, i, colType, cols[i].ColumnType);
 						cols[i].SetValue(obj, val);
 					}
+
 					OnInstanceCreated(obj);
 					yield return (T)obj;
 				}
@@ -2243,12 +2085,9 @@ namespace SQLite4Unity3d
 
 		public T ExecuteScalar<T>()
 		{
-			if (_conn.Trace)
-			{
-				Debug.WriteLine("Executing Query: " + this);
-			}
+			if (_conn.Trace) Debug.WriteLine("Executing Query: " + this);
 
-			T val = default(T);
+			var val = default(T);
 
 			var stmt = Prepare();
 
@@ -2278,11 +2117,7 @@ namespace SQLite4Unity3d
 
 		public void Bind(string name, object val)
 		{
-			_bindings.Add(new Binding
-			{
-				Name = name,
-				Value = val
-			});
+			_bindings.Add(new Binding { Name = name, Value = val });
 		}
 
 		public void Bind(object val)
@@ -2300,40 +2135,35 @@ namespace SQLite4Unity3d
 				parts[i] = string.Format("  {0}: {1}", i - 1, b.Value);
 				i++;
 			}
+
 			return string.Join(Environment.NewLine, parts);
 		}
 
-		Sqlite3Statement Prepare()
+		private Sqlite3Statement Prepare()
 		{
 			var stmt = SQLite3.Prepare2(_conn.Handle, CommandText);
 			BindAll(stmt);
 			return stmt;
 		}
 
-		void Finalize(Sqlite3Statement stmt)
+		private void Finalize(Sqlite3Statement stmt)
 		{
 			SQLite3.Finalize(stmt);
 		}
 
-		void BindAll(Sqlite3Statement stmt)
+		private void BindAll(Sqlite3Statement stmt)
 		{
-			int nextIdx = 1;
+			var nextIdx = 1;
 			foreach (var b in _bindings)
 			{
 				if (b.Name != null)
-				{
 					b.Index = SQLite3.BindParameterIndex(stmt, b.Name);
-				}
 				else
-				{
 					b.Index = nextIdx++;
-				}
 
 				BindParameter(stmt, b.Index, b.Value, _conn.StoreDateTimeAsTicks);
 			}
 		}
-
-		internal static IntPtr NegativePointer = new IntPtr(-1);
 
 		internal static void BindParameter(Sqlite3Statement stmt, int index, object value, bool storeDateTimeAsTicks)
 		{
@@ -2343,27 +2173,27 @@ namespace SQLite4Unity3d
 			}
 			else
 			{
-				if (value is Int32)
+				if (value is int)
 				{
 					SQLite3.BindInt(stmt, index, (int)value);
 				}
-				else if (value is String)
+				else if (value is string)
 				{
 					SQLite3.BindText(stmt, index, (string)value, -1, NegativePointer);
 				}
-				else if (value is Byte || value is UInt16 || value is SByte || value is Int16)
+				else if (value is byte || value is ushort || value is sbyte || value is short)
 				{
 					SQLite3.BindInt(stmt, index, Convert.ToInt32(value));
 				}
-				else if (value is Boolean)
+				else if (value is bool)
 				{
 					SQLite3.BindInt(stmt, index, (bool)value ? 1 : 0);
 				}
-				else if (value is UInt32 || value is Int64)
+				else if (value is uint || value is long)
 				{
 					SQLite3.BindInt64(stmt, index, Convert.ToInt64(value));
 				}
-				else if (value is Single || value is Double || value is Decimal)
+				else if (value is float || value is double || value is decimal)
 				{
 					SQLite3.BindDouble(stmt, index, Convert.ToDouble(value));
 				}
@@ -2374,13 +2204,10 @@ namespace SQLite4Unity3d
 				else if (value is DateTime)
 				{
 					if (storeDateTimeAsTicks)
-					{
 						SQLite3.BindInt64(stmt, index, ((DateTime)value).Ticks);
-					}
 					else
-					{
-						SQLite3.BindText(stmt, index, ((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss"), -1, NegativePointer);
-					}
+						SQLite3.BindText(stmt, index, ((DateTime)value).ToString("yyyy-MM-dd HH:mm:ss"), -1,
+							NegativePointer);
 				}
 				else if (value is DateTimeOffset)
 				{
@@ -2409,7 +2236,70 @@ namespace SQLite4Unity3d
 			}
 		}
 
-		class Binding
+		private object ReadCol(Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
+		{
+			if (type == SQLite3.ColType.Null) return null;
+
+			if (clrType == typeof(string)) return SQLite3.ColumnString(stmt, index);
+
+			if (clrType == typeof(int)) return SQLite3.ColumnInt(stmt, index);
+
+			if (clrType == typeof(bool)) return SQLite3.ColumnInt(stmt, index) == 1;
+
+			if (clrType == typeof(double)) return SQLite3.ColumnDouble(stmt, index);
+
+			if (clrType == typeof(float)) return (float)SQLite3.ColumnDouble(stmt, index);
+
+			if (clrType == typeof(TimeSpan)) return new TimeSpan(SQLite3.ColumnInt64(stmt, index));
+
+			if (clrType == typeof(DateTime))
+			{
+				if (_conn.StoreDateTimeAsTicks) return new DateTime(SQLite3.ColumnInt64(stmt, index));
+
+				var text = SQLite3.ColumnString(stmt, index);
+				return DateTime.Parse(text);
+			}
+
+			if (clrType == typeof(DateTimeOffset))
+			{
+				return new DateTimeOffset(SQLite3.ColumnInt64(stmt, index), TimeSpan.Zero);
+#if !NETFX_CORE
+			}
+
+			if (clrType.IsEnum)
+			{
+#else
+				} else if (clrType.GetTypeInfo().IsEnum) {
+#endif
+				return SQLite3.ColumnInt(stmt, index);
+			}
+
+			if (clrType == typeof(long)) return SQLite3.ColumnInt64(stmt, index);
+
+			if (clrType == typeof(uint)) return (uint)SQLite3.ColumnInt64(stmt, index);
+
+			if (clrType == typeof(decimal)) return (decimal)SQLite3.ColumnDouble(stmt, index);
+
+			if (clrType == typeof(byte)) return (byte)SQLite3.ColumnInt(stmt, index);
+
+			if (clrType == typeof(ushort)) return (ushort)SQLite3.ColumnInt(stmt, index);
+
+			if (clrType == typeof(short)) return (short)SQLite3.ColumnInt(stmt, index);
+
+			if (clrType == typeof(sbyte)) return (sbyte)SQLite3.ColumnInt(stmt, index);
+
+			if (clrType == typeof(byte[])) return SQLite3.ColumnByteArray(stmt, index);
+
+			if (clrType == typeof(Guid))
+			{
+				var text = SQLite3.ColumnString(stmt, index);
+				return new Guid(text);
+			}
+
+			throw new NotSupportedException("Don't know how to read " + clrType);
+		}
+
+		private class Binding
 		{
 			public string Name { get; set; }
 
@@ -2417,113 +2307,20 @@ namespace SQLite4Unity3d
 
 			public int Index { get; set; }
 		}
-
-		object ReadCol(Sqlite3Statement stmt, int index, SQLite3.ColType type, Type clrType)
-		{
-			if (type == SQLite3.ColType.Null)
-			{
-				return null;
-			}
-			else
-			{
-				if (clrType == typeof(String))
-				{
-					return SQLite3.ColumnString(stmt, index);
-				}
-				else if (clrType == typeof(Int32))
-				{
-					return (int)SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(Boolean))
-				{
-					return SQLite3.ColumnInt(stmt, index) == 1;
-				}
-				else if (clrType == typeof(double))
-				{
-					return SQLite3.ColumnDouble(stmt, index);
-				}
-				else if (clrType == typeof(float))
-				{
-					return (float)SQLite3.ColumnDouble(stmt, index);
-				}
-				else if (clrType == typeof(TimeSpan))
-				{
-					return new TimeSpan(SQLite3.ColumnInt64(stmt, index));
-				}
-				else if (clrType == typeof(DateTime))
-				{
-					if (_conn.StoreDateTimeAsTicks)
-					{
-						return new DateTime(SQLite3.ColumnInt64(stmt, index));
-					}
-					else
-					{
-						var text = SQLite3.ColumnString(stmt, index);
-						return DateTime.Parse(text);
-					}
-				}
-				else if (clrType == typeof(DateTimeOffset))
-				{
-					return new DateTimeOffset(SQLite3.ColumnInt64(stmt, index), TimeSpan.Zero);
-#if !NETFX_CORE
-				}
-				else if (clrType.IsEnum)
-				{
-#else
-				} else if (clrType.GetTypeInfo().IsEnum) {
-#endif
-					return SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(Int64))
-				{
-					return SQLite3.ColumnInt64(stmt, index);
-				}
-				else if (clrType == typeof(UInt32))
-				{
-					return (uint)SQLite3.ColumnInt64(stmt, index);
-				}
-				else if (clrType == typeof(decimal))
-				{
-					return (decimal)SQLite3.ColumnDouble(stmt, index);
-				}
-				else if (clrType == typeof(Byte))
-				{
-					return (byte)SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(UInt16))
-				{
-					return (ushort)SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(Int16))
-				{
-					return (short)SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(sbyte))
-				{
-					return (sbyte)SQLite3.ColumnInt(stmt, index);
-				}
-				else if (clrType == typeof(byte[]))
-				{
-					return SQLite3.ColumnByteArray(stmt, index);
-				}
-				else if (clrType == typeof(Guid))
-				{
-					var text = SQLite3.ColumnString(stmt, index);
-					return new Guid(text);
-				}
-				else
-				{
-					throw new NotSupportedException("Don't know how to read " + clrType);
-				}
-			}
-		}
 	}
 
 	/// <summary>
-	/// Since the insert never changed, we only need to prepare once.
+	///     Since the insert never changed, we only need to prepare once.
 	/// </summary>
 	public class PreparedSqlLiteInsertCommand : IDisposable
 	{
+		internal static readonly Sqlite3Statement NullStatement = default;
+
+		internal PreparedSqlLiteInsertCommand(SQLiteConnection conn)
+		{
+			Connection = conn;
+		}
+
 		public bool Initialized { get; set; }
 
 		protected SQLiteConnection Connection { get; set; }
@@ -2531,19 +2328,16 @@ namespace SQLite4Unity3d
 		public string CommandText { get; set; }
 
 		protected Sqlite3Statement Statement { get; set; }
-		internal static readonly Sqlite3Statement NullStatement = default(Sqlite3Statement);
 
-		internal PreparedSqlLiteInsertCommand(SQLiteConnection conn)
+		public void Dispose()
 		{
-			Connection = conn;
+			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 
 		public int ExecuteNonQuery(object[] source)
 		{
-			if (Connection.Trace)
-			{
-				Debug.WriteLine("Executing: " + CommandText);
-			}
+			if (Connection.Trace) Debug.WriteLine("Executing: " + CommandText);
 
 			var r = SQLite3.Result.OK;
 
@@ -2555,36 +2349,33 @@ namespace SQLite4Unity3d
 
 			//bind the values.
 			if (source != null)
-			{
-				for (int i = 0; i < source.Length; i++)
-				{
+				for (var i = 0; i < source.Length; i++)
 					SQLiteCommand.BindParameter(Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks);
-				}
-			}
 			r = SQLite3.Step(Statement);
 
 			if (r == SQLite3.Result.Done)
 			{
-				int rowsAffected = SQLite3.Changes(Connection.Handle);
+				var rowsAffected = SQLite3.Changes(Connection.Handle);
 				SQLite3.Reset(Statement);
 				return rowsAffected;
 			}
-			else if (r == SQLite3.Result.Error)
+
+			if (r == SQLite3.Result.Error)
 			{
-				string msg = SQLite3.GetErrmsg(Connection.Handle);
+				var msg = SQLite3.GetErrmsg(Connection.Handle);
 				SQLite3.Reset(Statement);
 				throw SQLiteException.New(r, msg);
 			}
-			else if (r == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode(Connection.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
+
+			if (r == SQLite3.Result.Constraint &&
+			    SQLite3.ExtendedErrCode(Connection.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
 			{
 				SQLite3.Reset(Statement);
 				throw NotNullConstraintViolationException.New(r, SQLite3.GetErrmsg(Connection.Handle));
 			}
-			else
-			{
-				SQLite3.Reset(Statement);
-				throw SQLiteException.New(r, r.ToString());
-			}
+
+			SQLite3.Reset(Statement);
+			throw SQLiteException.New(r, r.ToString());
 		}
 
 		protected virtual Sqlite3Statement Prepare()
@@ -2593,16 +2384,9 @@ namespace SQLite4Unity3d
 			return stmt;
 		}
 
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
 		private void Dispose(bool disposing)
 		{
 			if (Statement != NullStatement)
-			{
 				try
 				{
 					SQLite3.Finalize(Statement);
@@ -2612,7 +2396,6 @@ namespace SQLite4Unity3d
 					Statement = NullStatement;
 					Connection = null;
 				}
-			}
 		}
 
 		~PreparedSqlLiteInsertCommand()
@@ -2632,24 +2415,22 @@ namespace SQLite4Unity3d
 
 	public class TableQuery<T> : BaseTableQuery, IEnumerable<T>
 	{
-		public SQLiteConnection Connection { get; private set; }
+		private bool _deferred;
 
-		public TableMapping Table { get; private set; }
+		private BaseTableQuery _joinInner;
+		private Expression _joinInnerKeySelector;
+		private BaseTableQuery _joinOuter;
+		private Expression _joinOuterKeySelector;
+		private Expression _joinSelector;
+		private int? _limit;
+		private int? _offset;
+		private List<Ordering> _orderBys;
 
-		Expression _where;
-		List<Ordering> _orderBys;
-		int? _limit;
-		int? _offset;
+		private Expression _selector;
 
-		BaseTableQuery _joinInner;
-		Expression _joinInnerKeySelector;
-		BaseTableQuery _joinOuter;
-		Expression _joinOuterKeySelector;
-		Expression _joinSelector;
+		private Expression _where;
 
-		Expression _selector;
-
-		TableQuery(SQLiteConnection conn, TableMapping table)
+		private TableQuery(SQLiteConnection conn, TableMapping table)
 		{
 			Connection = conn;
 			Table = table;
@@ -2661,15 +2442,29 @@ namespace SQLite4Unity3d
 			Table = Connection.GetMapping(typeof(T));
 		}
 
+		public SQLiteConnection Connection { get; }
+
+		public TableMapping Table { get; }
+
+		public IEnumerator<T> GetEnumerator()
+		{
+			if (!_deferred)
+				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
+
+			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
+		}
+
 		public TableQuery<U> Clone<U>()
 		{
 			var q = new TableQuery<U>(Connection, Table);
 			q._where = _where;
 			q._deferred = _deferred;
-			if (_orderBys != null)
-			{
-				q._orderBys = new List<Ordering>(_orderBys);
-			}
+			if (_orderBys != null) q._orderBys = new List<Ordering>(_orderBys);
 			q._limit = _limit;
 			q._offset = _offset;
 			q._joinInner = _joinInner;
@@ -2691,10 +2486,8 @@ namespace SQLite4Unity3d
 				q.AddWhere(pred);
 				return q;
 			}
-			else
-			{
-				throw new NotSupportedException("Must be a predicate");
-			}
+
+			throw new NotSupportedException("Must be a predicate");
 		}
 
 		public TableQuery<T> Take(int n)
@@ -2716,7 +2509,6 @@ namespace SQLite4Unity3d
 			return Skip(index).Take(1).First();
 		}
 
-		bool _deferred;
 		public TableQuery<T> Deferred()
 		{
 			var q = Clone<T>();
@@ -2726,22 +2518,22 @@ namespace SQLite4Unity3d
 
 		public TableQuery<T> OrderBy<U>(Expression<Func<T, U>> orderExpr)
 		{
-			return AddOrderBy<U>(orderExpr, true);
+			return AddOrderBy(orderExpr, true);
 		}
 
 		public TableQuery<T> OrderByDescending<U>(Expression<Func<T, U>> orderExpr)
 		{
-			return AddOrderBy<U>(orderExpr, false);
+			return AddOrderBy(orderExpr, false);
 		}
 
 		public TableQuery<T> ThenBy<U>(Expression<Func<T, U>> orderExpr)
 		{
-			return AddOrderBy<U>(orderExpr, true);
+			return AddOrderBy(orderExpr, true);
 		}
 
 		public TableQuery<T> ThenByDescending<U>(Expression<Func<T, U>> orderExpr)
 		{
-			return AddOrderBy<U>(orderExpr, false);
+			return AddOrderBy(orderExpr, false);
 		}
 
 		private TableQuery<T> AddOrderBy<U>(Expression<Func<T, U>> orderExpr, bool asc)
@@ -2754,49 +2546,33 @@ namespace SQLite4Unity3d
 
 				var unary = lambda.Body as UnaryExpression;
 				if (unary != null && unary.NodeType == ExpressionType.Convert)
-				{
 					mem = unary.Operand as MemberExpression;
-				}
 				else
-				{
 					mem = lambda.Body as MemberExpression;
-				}
 
-				if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter))
+				if (mem != null && mem.Expression.NodeType == ExpressionType.Parameter)
 				{
 					var q = Clone<T>();
-					if (q._orderBys == null)
-					{
-						q._orderBys = new List<Ordering>();
-					}
+					if (q._orderBys == null) q._orderBys = new List<Ordering>();
 					q._orderBys.Add(new Ordering
 					{
-						ColumnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name,
-						Ascending = asc
+						ColumnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name, Ascending = asc
 					});
 					return q;
 				}
-				else
-				{
-					throw new NotSupportedException("Order By does not support: " + orderExpr);
-				}
+
+				throw new NotSupportedException("Order By does not support: " + orderExpr);
 			}
-			else
-			{
-				throw new NotSupportedException("Must be a predicate");
-			}
+
+			throw new NotSupportedException("Must be a predicate");
 		}
 
 		private void AddWhere(Expression pred)
 		{
 			if (_where == null)
-			{
 				_where = pred;
-			}
 			else
-			{
 				_where = Expression.AndAlso(_where, pred);
-			}
 		}
 
 		public TableQuery<TResult> Join<TInner, TKey, TResult>(
@@ -2811,7 +2587,7 @@ namespace SQLite4Unity3d
 				_joinOuterKeySelector = outerKeySelector,
 				_joinInner = inner,
 				_joinInnerKeySelector = innerKeySelector,
-				_joinSelector = resultSelector,
+				_joinSelector = resultSelector
 			};
 			return q;
 		}
@@ -2825,54 +2601,38 @@ namespace SQLite4Unity3d
 
 		private SQLiteCommand GenerateCommand(string selectionList)
 		{
-			if (_joinInner != null && _joinOuter != null)
-			{
-				throw new NotSupportedException("Joins are not supported.");
-			}
-			else
-			{
-				var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
-				var args = new List<object>();
-				if (_where != null)
-				{
-					var w = CompileExpr(_where, args);
-					cmdText += " where " + w.CommandText;
-				}
-				if ((_orderBys != null) && (_orderBys.Count > 0))
-				{
-					var t = string.Join(", ", _orderBys.Select(o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray());
-					cmdText += " order by " + t;
-				}
-				if (_limit.HasValue)
-				{
-					cmdText += " limit " + _limit.Value;
-				}
-				if (_offset.HasValue)
-				{
-					if (!_limit.HasValue)
-					{
-						cmdText += " limit -1 ";
-					}
-					cmdText += " offset " + _offset.Value;
-				}
-				return Connection.CreateCommand(cmdText, args.ToArray());
-			}
-		}
+			if (_joinInner != null && _joinOuter != null) throw new NotSupportedException("Joins are not supported.");
 
-		class CompileResult
-		{
-			public string CommandText { get; set; }
+			var cmdText = "select " + selectionList + " from \"" + Table.TableName + "\"";
+			var args = new List<object>();
+			if (_where != null)
+			{
+				var w = CompileExpr(_where, args);
+				cmdText += " where " + w.CommandText;
+			}
 
-			public object Value { get; set; }
+			if (_orderBys != null && _orderBys.Count > 0)
+			{
+				var t = string.Join(", ",
+					_orderBys.Select(o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray());
+				cmdText += " order by " + t;
+			}
+
+			if (_limit.HasValue) cmdText += " limit " + _limit.Value;
+			if (_offset.HasValue)
+			{
+				if (!_limit.HasValue) cmdText += " limit -1 ";
+				cmdText += " offset " + _offset.Value;
+			}
+
+			return Connection.CreateCommand(cmdText, args.ToArray());
 		}
 
 		private CompileResult CompileExpr(Expression expr, List<object> queryArgs)
 		{
-			if (expr == null)
-			{
-				throw new NotSupportedException("Expression is NULL");
-			}
-			else if (expr is BinaryExpression)
+			if (expr == null) throw new NotSupportedException("Expression is NULL");
+
+			if (expr is BinaryExpression)
 			{
 				var bin = (BinaryExpression)expr;
 
@@ -2889,17 +2649,14 @@ namespace SQLite4Unity3d
 					text = "(" + leftr.CommandText + " " + GetSqlName(bin) + " " + rightr.CommandText + ")";
 				return new CompileResult { CommandText = text };
 			}
-			else if (expr.NodeType == ExpressionType.Call)
-			{
 
+			if (expr.NodeType == ExpressionType.Call)
+			{
 				var call = (MethodCallExpression)expr;
 				var args = new CompileResult[call.Arguments.Count];
 				var obj = call.Object != null ? CompileExpr(call.Object, queryArgs) : null;
 
-				for (var i = 0; i < args.Length; i++)
-				{
-					args[i] = CompileExpr(call.Arguments[i], queryArgs);
-				}
+				for (var i = 0; i < args.Length; i++) args[i] = CompileExpr(call.Arguments[i], queryArgs);
 
 				var sqlCall = "";
 
@@ -2914,13 +2671,9 @@ namespace SQLite4Unity3d
 				else if (call.Method.Name == "Contains" && args.Length == 1)
 				{
 					if (call.Object != null && call.Object.Type == typeof(string))
-					{
 						sqlCall = "(" + obj.CommandText + " like ('%' || " + args[0].CommandText + " || '%'))";
-					}
 					else
-					{
 						sqlCall = "(" + args[0].CommandText + " in " + obj.CommandText + ")";
-					}
 				}
 				else if (call.Method.Name == "StartsWith" && args.Length == 1)
 				{
@@ -2944,33 +2697,32 @@ namespace SQLite4Unity3d
 				}
 				else
 				{
-					sqlCall = call.Method.Name.ToLower() + "(" + string.Join(",", args.Select(a => a.CommandText).ToArray()) + ")";
+					sqlCall = call.Method.Name.ToLower() + "(" +
+					          string.Join(",", args.Select(a => a.CommandText).ToArray()) + ")";
 				}
-				return new CompileResult { CommandText = sqlCall };
 
+				return new CompileResult { CommandText = sqlCall };
 			}
-			else if (expr.NodeType == ExpressionType.Constant)
+
+			if (expr.NodeType == ExpressionType.Constant)
 			{
 				var c = (ConstantExpression)expr;
 				queryArgs.Add(c.Value);
-				return new CompileResult
-				{
-					CommandText = "?",
-					Value = c.Value
-				};
+				return new CompileResult { CommandText = "?", Value = c.Value };
 			}
-			else if (expr.NodeType == ExpressionType.Convert)
+
+			if (expr.NodeType == ExpressionType.Convert)
 			{
 				var u = (UnaryExpression)expr;
 				var ty = u.Type;
 				var valr = CompileExpr(u.Operand, queryArgs);
 				return new CompileResult
 				{
-					CommandText = valr.CommandText,
-					Value = valr.Value != null ? ConvertTo(valr.Value, ty) : null
+					CommandText = valr.CommandText, Value = valr.Value != null ? ConvertTo(valr.Value, ty) : null
 				};
 			}
-			else if (expr.NodeType == ExpressionType.MemberAccess)
+
+			if (expr.NodeType == ExpressionType.MemberAccess)
 			{
 				var mem = (MemberExpression)expr;
 
@@ -2983,169 +2735,129 @@ namespace SQLite4Unity3d
 					var columnName = Table.FindColumnWithPropertyName(mem.Member.Name).Name;
 					return new CompileResult { CommandText = "\"" + columnName + "\"" };
 				}
-				else
-				{
-					object obj = null;
-					if (mem.Expression != null)
-					{
-						var r = CompileExpr(mem.Expression, queryArgs);
-						if (r.Value == null)
-						{
-							throw new NotSupportedException("Member access failed to compile expression");
-						}
-						if (r.CommandText == "?")
-						{
-							queryArgs.RemoveAt(queryArgs.Count - 1);
-						}
-						obj = r.Value;
-					}
 
-					//
-					// Get the member value
-					//
-					object val = null;
+				object obj = null;
+				if (mem.Expression != null)
+				{
+					var r = CompileExpr(mem.Expression, queryArgs);
+					if (r.Value == null) throw new NotSupportedException("Member access failed to compile expression");
+					if (r.CommandText == "?") queryArgs.RemoveAt(queryArgs.Count - 1);
+					obj = r.Value;
+				}
+
+				//
+				// Get the member value
+				//
+				object val = null;
 
 #if !NETFX_CORE
-					if (mem.Member.MemberType == MemberTypes.Property)
-					{
+				if (mem.Member.MemberType == MemberTypes.Property)
+				{
 #else
 					if (mem.Member is PropertyInfo) {
 #endif
-						var m = (PropertyInfo)mem.Member;
-						val = m.GetValue(obj, null);
+					var m = (PropertyInfo)mem.Member;
+					val = m.GetValue(obj, null);
 #if !NETFX_CORE
-					}
-					else if (mem.Member.MemberType == MemberTypes.Field)
-					{
+				}
+				else if (mem.Member.MemberType == MemberTypes.Field)
+				{
 #else
 					} else if (mem.Member is FieldInfo) {
 #endif
 #if SILVERLIGHT
 						val = Expression.Lambda (expr).Compile ().DynamicInvoke ();
 #else
-						var m = (FieldInfo)mem.Member;
-						val = m.GetValue(obj);
+					var m = (FieldInfo)mem.Member;
+					val = m.GetValue(obj);
 #endif
-					}
-					else
-					{
+				}
+				else
+				{
 #if !NETFX_CORE
-						throw new NotSupportedException("MemberExpr: " + mem.Member.MemberType);
+					throw new NotSupportedException("MemberExpr: " + mem.Member.MemberType);
 #else
 						throw new NotSupportedException ("MemberExpr: " + mem.Member.DeclaringType);
 #endif
+				}
+
+				//
+				// Work special magic for enumerables
+				//
+				if (val != null && val is IEnumerable && !(val is string) && !(val is IEnumerable<byte>))
+				{
+					var sb = new StringBuilder();
+					sb.Append("(");
+					var head = "";
+					foreach (var a in (IEnumerable)val)
+					{
+						queryArgs.Add(a);
+						sb.Append(head);
+						sb.Append("?");
+						head = ",";
 					}
 
-					//
-					// Work special magic for enumerables
-					//
-					if (val != null && val is System.Collections.IEnumerable && !(val is string) && !(val is System.Collections.Generic.IEnumerable<byte>))
-					{
-						var sb = new System.Text.StringBuilder();
-						sb.Append("(");
-						var head = "";
-						foreach (var a in (System.Collections.IEnumerable)val)
-						{
-							queryArgs.Add(a);
-							sb.Append(head);
-							sb.Append("?");
-							head = ",";
-						}
-						sb.Append(")");
-						return new CompileResult
-						{
-							CommandText = sb.ToString(),
-							Value = val
-						};
-					}
-					else
-					{
-						queryArgs.Add(val);
-						return new CompileResult
-						{
-							CommandText = "?",
-							Value = val
-						};
-					}
+					sb.Append(")");
+					return new CompileResult { CommandText = sb.ToString(), Value = val };
 				}
+
+				queryArgs.Add(val);
+				return new CompileResult { CommandText = "?", Value = val };
 			}
-			throw new NotSupportedException("Cannot compile: " + expr.NodeType.ToString());
+
+			throw new NotSupportedException("Cannot compile: " + expr.NodeType);
 		}
 
-		static object ConvertTo(object obj, Type t)
+		private static object ConvertTo(object obj, Type t)
 		{
-			Type nut = Nullable.GetUnderlyingType(t);
+			var nut = Nullable.GetUnderlyingType(t);
 
 			if (nut != null)
 			{
 				if (obj == null) return null;
 				return Convert.ChangeType(obj, nut);
 			}
-			else
-			{
-				return Convert.ChangeType(obj, t);
-			}
+
+			return Convert.ChangeType(obj, t);
 		}
 
 		/// <summary>
-		/// Compiles a BinaryExpression where one of the parameters is null.
+		///     Compiles a BinaryExpression where one of the parameters is null.
 		/// </summary>
 		/// <param name="parameter">The non-null parameter</param>
 		private string CompileNullBinaryExpression(BinaryExpression expression, CompileResult parameter)
 		{
 			if (expression.NodeType == ExpressionType.Equal)
 				return "(" + parameter.CommandText + " is ?)";
-			else if (expression.NodeType == ExpressionType.NotEqual)
+			if (expression.NodeType == ExpressionType.NotEqual)
 				return "(" + parameter.CommandText + " is not ?)";
-			else
-				throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " + expression.NodeType.ToString());
+			throw new NotSupportedException("Cannot compile Null-BinaryExpression with type " + expression.NodeType);
 		}
 
-		string GetSqlName(Expression expr)
+		private string GetSqlName(Expression expr)
 		{
 			var n = expr.NodeType;
 			if (n == ExpressionType.GreaterThan)
 				return ">";
-			else if (n == ExpressionType.GreaterThanOrEqual)
-			{
+			if (n == ExpressionType.GreaterThanOrEqual)
 				return ">=";
-			}
-			else if (n == ExpressionType.LessThan)
-			{
+			if (n == ExpressionType.LessThan)
 				return "<";
-			}
-			else if (n == ExpressionType.LessThanOrEqual)
-			{
+			if (n == ExpressionType.LessThanOrEqual)
 				return "<=";
-			}
-			else if (n == ExpressionType.And)
-			{
+			if (n == ExpressionType.And)
 				return "&";
-			}
-			else if (n == ExpressionType.AndAlso)
-			{
+			if (n == ExpressionType.AndAlso)
 				return "and";
-			}
-			else if (n == ExpressionType.Or)
-			{
+			if (n == ExpressionType.Or)
 				return "|";
-			}
-			else if (n == ExpressionType.OrElse)
-			{
+			if (n == ExpressionType.OrElse)
 				return "or";
-			}
-			else if (n == ExpressionType.Equal)
-			{
+			if (n == ExpressionType.Equal)
 				return "=";
-			}
-			else if (n == ExpressionType.NotEqual)
-			{
+			if (n == ExpressionType.NotEqual)
 				return "!=";
-			}
-			else
-			{
-				throw new NotSupportedException("Cannot get SQL for: " + n);
-			}
+			throw new NotSupportedException("Cannot get SQL for: " + n);
 		}
 
 		public int Count()
@@ -3158,35 +2870,29 @@ namespace SQLite4Unity3d
 			return Where(predExpr).Count();
 		}
 
-		public IEnumerator<T> GetEnumerator()
-		{
-			if (!_deferred)
-				return GenerateCommand("*").ExecuteQuery<T>().GetEnumerator();
-
-			return GenerateCommand("*").ExecuteDeferredQuery<T>().GetEnumerator();
-		}
-
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
-
 		public T First()
 		{
 			var query = Take(1);
-			return query.ToList<T>().First();
+			return query.ToList().First();
 		}
 
 		public T FirstOrDefault()
 		{
 			var query = Take(1);
-			return query.ToList<T>().FirstOrDefault();
+			return query.ToList().FirstOrDefault();
+		}
+
+		private class CompileResult
+		{
+			public string CommandText { get; set; }
+
+			public object Value { get; set; }
 		}
 	}
 
 	public static class SQLite3
 	{
-		public enum Result : int
+		public enum Result
 		{
 			OK = 0,
 			Error = 1,
@@ -3221,57 +2927,57 @@ namespace SQLite4Unity3d
 			Done = 101
 		}
 
-		public enum ExtendedResult : int
+		public enum ExtendedResult
 		{
-			IOErrorRead = (Result.IOError | (1 << 8)),
-			IOErrorShortRead = (Result.IOError | (2 << 8)),
-			IOErrorWrite = (Result.IOError | (3 << 8)),
-			IOErrorFsync = (Result.IOError | (4 << 8)),
-			IOErrorDirFSync = (Result.IOError | (5 << 8)),
-			IOErrorTruncate = (Result.IOError | (6 << 8)),
-			IOErrorFStat = (Result.IOError | (7 << 8)),
-			IOErrorUnlock = (Result.IOError | (8 << 8)),
-			IOErrorRdlock = (Result.IOError | (9 << 8)),
-			IOErrorDelete = (Result.IOError | (10 << 8)),
-			IOErrorBlocked = (Result.IOError | (11 << 8)),
-			IOErrorNoMem = (Result.IOError | (12 << 8)),
-			IOErrorAccess = (Result.IOError | (13 << 8)),
-			IOErrorCheckReservedLock = (Result.IOError | (14 << 8)),
-			IOErrorLock = (Result.IOError | (15 << 8)),
-			IOErrorClose = (Result.IOError | (16 << 8)),
-			IOErrorDirClose = (Result.IOError | (17 << 8)),
-			IOErrorSHMOpen = (Result.IOError | (18 << 8)),
-			IOErrorSHMSize = (Result.IOError | (19 << 8)),
-			IOErrorSHMLock = (Result.IOError | (20 << 8)),
-			IOErrorSHMMap = (Result.IOError | (21 << 8)),
-			IOErrorSeek = (Result.IOError | (22 << 8)),
-			IOErrorDeleteNoEnt = (Result.IOError | (23 << 8)),
-			IOErrorMMap = (Result.IOError | (24 << 8)),
-			LockedSharedcache = (Result.Locked | (1 << 8)),
-			BusyRecovery = (Result.Busy | (1 << 8)),
-			CannottOpenNoTempDir = (Result.CannotOpen | (1 << 8)),
-			CannotOpenIsDir = (Result.CannotOpen | (2 << 8)),
-			CannotOpenFullPath = (Result.CannotOpen | (3 << 8)),
-			CorruptVTab = (Result.Corrupt | (1 << 8)),
-			ReadonlyRecovery = (Result.ReadOnly | (1 << 8)),
-			ReadonlyCannotLock = (Result.ReadOnly | (2 << 8)),
-			ReadonlyRollback = (Result.ReadOnly | (3 << 8)),
-			AbortRollback = (Result.Abort | (2 << 8)),
-			ConstraintCheck = (Result.Constraint | (1 << 8)),
-			ConstraintCommitHook = (Result.Constraint | (2 << 8)),
-			ConstraintForeignKey = (Result.Constraint | (3 << 8)),
-			ConstraintFunction = (Result.Constraint | (4 << 8)),
-			ConstraintNotNull = (Result.Constraint | (5 << 8)),
-			ConstraintPrimaryKey = (Result.Constraint | (6 << 8)),
-			ConstraintTrigger = (Result.Constraint | (7 << 8)),
-			ConstraintUnique = (Result.Constraint | (8 << 8)),
-			ConstraintVTab = (Result.Constraint | (9 << 8)),
-			NoticeRecoverWAL = (Result.Notice | (1 << 8)),
-			NoticeRecoverRollback = (Result.Notice | (2 << 8))
+			IOErrorRead = Result.IOError | (1 << 8),
+			IOErrorShortRead = Result.IOError | (2 << 8),
+			IOErrorWrite = Result.IOError | (3 << 8),
+			IOErrorFsync = Result.IOError | (4 << 8),
+			IOErrorDirFSync = Result.IOError | (5 << 8),
+			IOErrorTruncate = Result.IOError | (6 << 8),
+			IOErrorFStat = Result.IOError | (7 << 8),
+			IOErrorUnlock = Result.IOError | (8 << 8),
+			IOErrorRdlock = Result.IOError | (9 << 8),
+			IOErrorDelete = Result.IOError | (10 << 8),
+			IOErrorBlocked = Result.IOError | (11 << 8),
+			IOErrorNoMem = Result.IOError | (12 << 8),
+			IOErrorAccess = Result.IOError | (13 << 8),
+			IOErrorCheckReservedLock = Result.IOError | (14 << 8),
+			IOErrorLock = Result.IOError | (15 << 8),
+			IOErrorClose = Result.IOError | (16 << 8),
+			IOErrorDirClose = Result.IOError | (17 << 8),
+			IOErrorSHMOpen = Result.IOError | (18 << 8),
+			IOErrorSHMSize = Result.IOError | (19 << 8),
+			IOErrorSHMLock = Result.IOError | (20 << 8),
+			IOErrorSHMMap = Result.IOError | (21 << 8),
+			IOErrorSeek = Result.IOError | (22 << 8),
+			IOErrorDeleteNoEnt = Result.IOError | (23 << 8),
+			IOErrorMMap = Result.IOError | (24 << 8),
+			LockedSharedcache = Result.Locked | (1 << 8),
+			BusyRecovery = Result.Busy | (1 << 8),
+			CannottOpenNoTempDir = Result.CannotOpen | (1 << 8),
+			CannotOpenIsDir = Result.CannotOpen | (2 << 8),
+			CannotOpenFullPath = Result.CannotOpen | (3 << 8),
+			CorruptVTab = Result.Corrupt | (1 << 8),
+			ReadonlyRecovery = Result.ReadOnly | (1 << 8),
+			ReadonlyCannotLock = Result.ReadOnly | (2 << 8),
+			ReadonlyRollback = Result.ReadOnly | (3 << 8),
+			AbortRollback = Result.Abort | (2 << 8),
+			ConstraintCheck = Result.Constraint | (1 << 8),
+			ConstraintCommitHook = Result.Constraint | (2 << 8),
+			ConstraintForeignKey = Result.Constraint | (3 << 8),
+			ConstraintFunction = Result.Constraint | (4 << 8),
+			ConstraintNotNull = Result.Constraint | (5 << 8),
+			ConstraintPrimaryKey = Result.Constraint | (6 << 8),
+			ConstraintTrigger = Result.Constraint | (7 << 8),
+			ConstraintUnique = Result.Constraint | (8 << 8),
+			ConstraintVTab = Result.Constraint | (9 << 8),
+			NoticeRecoverWAL = Result.Notice | (1 << 8),
+			NoticeRecoverRollback = Result.Notice | (2 << 8)
 		}
 
 
-		public enum ConfigOption : int
+		public enum ConfigOption
 		{
 			SingleThread = 1,
 			MultiThread = 2,
@@ -3283,7 +2989,8 @@ namespace SQLite4Unity3d
 		public static extern Result Open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags, IntPtr zvfs);
+		public static extern Result Open([MarshalAs(UnmanagedType.LPStr)] string filename, out IntPtr db, int flags,
+			IntPtr zvfs);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open_v2", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open(byte[] filename, out IntPtr db, int flags, IntPtr zvfs);
@@ -3291,7 +2998,8 @@ namespace SQLite4Unity3d
 		[DllImport("sqlite3", EntryPoint = "sqlite3_open16", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Open16([MarshalAs(UnmanagedType.LPWStr)] string filename, out IntPtr db);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_enable_load_extension", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_enable_load_extension",
+			CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result EnableLoadExtension(IntPtr db, int onoff);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_close", CallingConvention = CallingConvention.Cdecl)]
@@ -3306,7 +3014,8 @@ namespace SQLite4Unity3d
 		[DllImport("sqlite3", EntryPoint = "sqlite3_config", CallingConvention = CallingConvention.Cdecl)]
 		public static extern Result Config(ConfigOption option);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+		[DllImport("sqlite3", EntryPoint = "sqlite3_win32_set_directory", CallingConvention = CallingConvention.Cdecl,
+			CharSet = CharSet.Unicode)]
 		public static extern int SetDirectory(uint directoryType, string directoryPath);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_busy_timeout", CallingConvention = CallingConvention.Cdecl)]
@@ -3316,7 +3025,8 @@ namespace SQLite4Unity3d
 		public static extern int Changes(IntPtr db);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
-		public static extern Result Prepare2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes, out IntPtr stmt, IntPtr pzTail);
+		public static extern Result Prepare2(IntPtr db, [MarshalAs(UnmanagedType.LPStr)] string sql, int numBytes,
+			out IntPtr stmt, IntPtr pzTail);
 
 #if NETFX_CORE
 		[DllImport ("sqlite3", EntryPoint = "sqlite3_prepare_v2", CallingConvention = CallingConvention.Cdecl)]
@@ -3330,12 +3040,9 @@ namespace SQLite4Unity3d
             byte[] queryBytes = System.Text.UTF8Encoding.UTF8.GetBytes (query);
             var r = Prepare2 (db, queryBytes, queryBytes.Length, out stmt, IntPtr.Zero);
 #else
-			var r = Prepare2(db, query, System.Text.UTF8Encoding.UTF8.GetByteCount(query), out stmt, IntPtr.Zero);
+			var r = Prepare2(db, query, Encoding.UTF8.GetByteCount(query), out stmt, IntPtr.Zero);
 #endif
-			if (r != Result.OK)
-			{
-				throw SQLiteException.New(r, GetErrmsg(db));
-			}
+			if (r != Result.OK) throw SQLiteException.New(r, GetErrmsg(db));
 			return stmt;
 		}
 
@@ -3374,8 +3081,10 @@ namespace SQLite4Unity3d
 		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_double", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindDouble(IntPtr stmt, int index, double val);
 
-		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_text16", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-		public static extern int BindText(IntPtr stmt, int index, [MarshalAs(UnmanagedType.LPWStr)] string val, int n, IntPtr free);
+		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_text16", CallingConvention = CallingConvention.Cdecl,
+			CharSet = CharSet.Unicode)]
+		public static extern int BindText(IntPtr stmt, int index, [MarshalAs(UnmanagedType.LPWStr)] string val, int n,
+			IntPtr free);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_bind_blob", CallingConvention = CallingConvention.Cdecl)]
 		public static extern int BindBlob(IntPtr stmt, int index, byte[] val, int n, IntPtr free);
@@ -3387,7 +3096,8 @@ namespace SQLite4Unity3d
 		public static extern IntPtr ColumnName(IntPtr stmt, int index);
 
 		[DllImport("sqlite3", EntryPoint = "sqlite3_column_name16", CallingConvention = CallingConvention.Cdecl)]
-		static extern IntPtr ColumnName16Internal(IntPtr stmt, int index);
+		private static extern IntPtr ColumnName16Internal(IntPtr stmt, int index);
+
 		public static string ColumnName16(IntPtr stmt, int index)
 		{
 			return Marshal.PtrToStringUni(ColumnName16Internal(stmt, index));
@@ -3419,12 +3129,12 @@ namespace SQLite4Unity3d
 
 		public static string ColumnString(IntPtr stmt, int index)
 		{
-			return Marshal.PtrToStringUni(SQLite3.ColumnText16(stmt, index));
+			return Marshal.PtrToStringUni(ColumnText16(stmt, index));
 		}
 
 		public static byte[] ColumnByteArray(IntPtr stmt, int index)
 		{
-			int length = ColumnBytes(stmt, index);
+			var length = ColumnBytes(stmt, index);
 			var result = new byte[length];
 			if (length > 0)
 				Marshal.Copy(ColumnBlob(stmt, index), result, 0, length);
@@ -3626,7 +3336,7 @@ namespace SQLite4Unity3d
 		}
 #endif
 
-		public enum ColType : int
+		public enum ColType
 		{
 			Integer = 1,
 			Float = 2,

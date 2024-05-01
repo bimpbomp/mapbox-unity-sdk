@@ -1,8 +1,8 @@
-﻿namespace Mapbox.Unity.MeshGeneration.Modifiers
-{
-	using Mapbox.Unity.MeshGeneration.Data;
-	using UnityEngine;
+﻿using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Unity.MeshGeneration.Modifiers
+{
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Disable Mesh Renderer Modifier")]
 	public class DisableMeshRendererModifier : GameObjectModifier
 	{

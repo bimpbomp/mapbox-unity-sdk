@@ -1,8 +1,7 @@
-﻿namespace Mapbox.Editor
-{	
-	using System;
-	using UnityEngine;
-	using Random = UnityEngine.Random;
+﻿using System;
+
+namespace Mapbox.Editor
+{
 	[Serializable]
 	public class FeatureTreeElement : TreeElement
 	{

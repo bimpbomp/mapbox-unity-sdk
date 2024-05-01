@@ -4,23 +4,22 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-	using System;
-	using Mapbox;
-	using NUnit.Framework;
-	using Mapbox.Utils;
-
 	[TestFixture]
 	internal class BearingFilterTest
 	{
-		private BearingFilter _bearingFilter;
-
 		[SetUp]
 		public void SetUp()
 		{
 			_bearingFilter = new BearingFilter(10, 10);
 		}
+
+		private BearingFilter _bearingFilter;
 
 		public void BearingTooLarge()
 		{

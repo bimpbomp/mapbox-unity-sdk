@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Mapbox.Unity.Map;
-using Mapbox.Unity.MeshGeneration.Interfaces;
 using Mapbox.Unity.MeshGeneration.Filters;
 using Mapbox.Unity.MeshGeneration.Modifiers;
 using UnityEngine;
 
 public class ApiTest : MonoBehaviour
 {
-	private AbstractMap _abstractMap;
 	public ImagerySourceType imagerySource = ImagerySourceType.MapboxStreets;
 
 	public LocationPrefabCategories LocationPrefabCategories;
@@ -25,21 +21,38 @@ public class ApiTest : MonoBehaviour
 	public float max;
 	public string contains;
 
-	readonly StyleTypes[] testStyles = new StyleTypes[3] { StyleTypes.Fantasy, StyleTypes.Realistic, StyleTypes.Simple };
-	int styleId = -1;
+	private readonly StyleTypes[] testStyles =
+		new StyleTypes[3] { StyleTypes.Fantasy, StyleTypes.Realistic, StyleTypes.Simple };
 
-	void Start()
+	private AbstractMap _abstractMap;
+	private int styleId = -1;
+
+	private void Start()
 	{
 		_abstractMap = FindObjectOfType<AbstractMap>();
 
-		_abstractMap.OnTilesStarting += (s) => { Debug.Log("Starting " + string.Join(",", s.Select(x => x.ToString()).ToArray())); };
-		_abstractMap.OnTileFinished += (s) => { Debug.Log("Finished " + s.CanonicalTileId); };
-		_abstractMap.OnTilesDisposing += (s) => { Debug.Log("Disposing " + string.Join(",", s.Select(x => x.ToString()).ToArray())); };
+		_abstractMap.OnTilesStarting += s =>
+		{
+			Debug.Log("Starting " + string.Join(",", s.Select(x => x.ToString()).ToArray()));
+		};
+		_abstractMap.OnTileFinished += s => { Debug.Log("Finished " + s.CanonicalTileId); };
+		_abstractMap.OnTilesDisposing += s =>
+		{
+			Debug.Log("Disposing " + string.Join(",", s.Select(x => x.ToString()).ToArray()));
+		};
 
-		_abstractMap.MapVisualizer.OnTileHeightProcessingFinished += (s) => { Debug.Log("Terrain finished " + s.CanonicalTileId); };
-		_abstractMap.MapVisualizer.OnTileImageProcessingFinished += (s) => { Debug.Log("Image finished " + s.CanonicalTileId); };
-		_abstractMap.MapVisualizer.OnTileVectorProcessingFinished += (s) => { Debug.Log("Vector finished " + s.CanonicalTileId); };
-
+		_abstractMap.MapVisualizer.OnTileHeightProcessingFinished += s =>
+		{
+			Debug.Log("Terrain finished " + s.CanonicalTileId);
+		};
+		_abstractMap.MapVisualizer.OnTileImageProcessingFinished += s =>
+		{
+			Debug.Log("Image finished " + s.CanonicalTileId);
+		};
+		_abstractMap.MapVisualizer.OnTileVectorProcessingFinished += s =>
+		{
+			Debug.Log("Vector finished " + s.CanonicalTileId);
+		};
 	}
 
 	[ContextMenu("ChangeExtentType")]
@@ -83,13 +96,9 @@ public class ApiTest : MonoBehaviour
 	public void SetTerrainDataSource()
 	{
 		if (_abstractMap.Terrain.LayerSource == ElevationSourceType.MapboxTerrain)
-		{
 			_abstractMap.Terrain.SetLayerSource(ElevationSourceType.None);
-		}
 		else
-		{
-			_abstractMap.Terrain.SetLayerSource(ElevationSourceType.MapboxTerrain);
-		}
+			_abstractMap.Terrain.SetLayerSource();
 	}
 
 	[ContextMenu("EnableVectorColliders")]
@@ -111,7 +120,9 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("ChangeImagery")]
 	public void ChangeImagery()
 	{
-		imagerySource = (imagerySource == ImagerySourceType.MapboxSatelliteStreet) ? ImagerySourceType.MapboxStreets : imagerySource + 1;
+		imagerySource = imagerySource == ImagerySourceType.MapboxSatelliteStreet
+			? ImagerySourceType.MapboxStreets
+			: imagerySource + 1;
 		_abstractMap.ImageLayer.SetLayerSource(imagerySource);
 	}
 
@@ -120,13 +131,9 @@ public class ApiTest : MonoBehaviour
 	{
 		var layer = _abstractMap.VectorData.FindFeatureSubLayerWithName("ExtrudedBuildings");
 		if (layer != null)
-		{
 			layer.SetActive(false);
-		}
 		else
-		{
 			Debug.Log("Layer not found");
-		}
 	}
 
 	[ContextMenu("EnableLayer")]
@@ -134,34 +141,26 @@ public class ApiTest : MonoBehaviour
 	{
 		var layer = _abstractMap.VectorData.FindFeatureSubLayerWithName("ExtrudedBuildings");
 		if (layer != null)
-		{
 			layer.SetActive(true);
-		}
 		else
-		{
 			Debug.Log("Layer not found");
-		}
 	}
 
 	[ContextMenu("ChangeBuildingMaterial")]
 	public void ChangeBuildingMaterial()
 	{
-		styleId = (styleId == 2) ? 0 : styleId + 1;
+		styleId = styleId == 2 ? 0 : styleId + 1;
 		var layer = _abstractMap.VectorData.FindFeatureSubLayerWithName("ExtrudedBuildings");
 		if (layer != null)
-		{
 			layer.Texturing.SetStyleType(testStyles[styleId]);
-		}
 		else
-		{
 			Debug.Log("Layer not found");
-		}
 	}
 
 	[ContextMenu("AddLayer")]
 	public void AddLayer()
 	{
-		VectorSubLayerProperties subLayerProperties = new VectorSubLayerProperties();
+		var subLayerProperties = new VectorSubLayerProperties();
 		subLayerProperties.coreOptions.geometryType = VectorPrimitiveType.Polygon;
 		subLayerProperties.coreOptions.layerName = "building";
 
@@ -244,7 +243,7 @@ public class ApiTest : MonoBehaviour
 	public void AddNewFilter()
 	{
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
-		LayerFilter layerFilter = new LayerFilter(LayerFilterOperationType.Contains);
+		var layerFilter = new LayerFilter();
 		vectorLayer.filterOptions.filters.Add(layerFilter);
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -252,12 +251,9 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Remove Filter")]
 	public void RemoveFilter()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
-		if (index < vectorLayer.filterOptions.filters.Count)
-		{
-			vectorLayer.filterOptions.filters.RemoveAt(index);
-		}
+		if (index < vectorLayer.filterOptions.filters.Count) vectorLayer.filterOptions.filters.RemoveAt(index);
 
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -275,12 +271,9 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Set Filter Key")]
 	public void SetFilterKey()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
-		if (index < vectorLayer.filterOptions.filters.Count)
-		{
-			vectorLayer.filterOptions.filters[index].Key = filterKey;
-		}
+		if (index < vectorLayer.filterOptions.filters.Count) vectorLayer.filterOptions.filters[index].Key = filterKey;
 
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -288,12 +281,10 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Set Filter Operator")]
 	public void SetFilterOperator()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
 		if (index < vectorLayer.filterOptions.filters.Count)
-		{
 			vectorLayer.filterOptions.filters[index].filterOperator = layerFilterOperationType;
-		}
 
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -301,12 +292,9 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Set Filter Min Value")]
 	public void SetFilterCompareValue()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
-		if (index < vectorLayer.filterOptions.filters.Count)
-		{
-			vectorLayer.filterOptions.filters[index].Min = min;
-		}
+		if (index < vectorLayer.filterOptions.filters.Count) vectorLayer.filterOptions.filters[index].Min = min;
 
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -314,7 +302,7 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Set Filter Compare MinMaxValue")]
 	public void SetFilterCompareMinMaxValue()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
 		if (index < vectorLayer.filterOptions.filters.Count)
 		{
@@ -328,12 +316,10 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("Vector - Set Filter Contains Value")]
 	public void SetFilterContainsValue()
 	{
-		int index = 0;
+		var index = 0;
 		var vectorLayer = _abstractMap.VectorData.FindFeatureSubLayerWithName("loc");
 		if (index < vectorLayer.filterOptions.filters.Count)
-		{
 			vectorLayer.filterOptions.filters[index].PropertyValue = contains;
-		}
 
 		vectorLayer.filterOptions.HasChanged = true;
 	}
@@ -364,7 +350,9 @@ public class ApiTest : MonoBehaviour
 		str += _abstractMap.VectorData.GetFeatureSubLayerAtIndex(0).Key;
 		str += "\r\n";
 		str += "Feature Layers with \"B\" in the name ";
-		str += string.Join(",", _abstractMap.VectorData.GetFeatureSubLayerByQuery(x => x.coreOptions.sublayerName.Contains("B")).Select(x => x.coreOptions.sublayerName).ToArray());
+		str += string.Join(",",
+			_abstractMap.VectorData.GetFeatureSubLayerByQuery(x => x.coreOptions.sublayerName.Contains("B"))
+				.Select(x => x.coreOptions.sublayerName).ToArray());
 		str += "\r\n";
 		str += "All Poi Layers: ";
 		str += string.Join(",", _abstractMap.VectorData.GetAllPointsOfInterestSubLayers().Select(x => x.Key).ToArray());
@@ -373,7 +361,9 @@ public class ApiTest : MonoBehaviour
 		str += _abstractMap.VectorData.GetPointsOfInterestSubLayerAtIndex(0).Key;
 		str += "\r\n";
 		str += "Poi Layers with \"L\" in the name ";
-		str += string.Join(",", _abstractMap.VectorData.GetPointsOfInterestSubLayerByQuery(x => x.coreOptions.sublayerName.Contains("L")).Select(x => x.coreOptions.sublayerName).ToArray());
+		str += string.Join(",",
+			_abstractMap.VectorData.GetPointsOfInterestSubLayerByQuery(x => x.coreOptions.sublayerName.Contains("L"))
+				.Select(x => x.coreOptions.sublayerName).ToArray());
 
 		Debug.Log(str);
 	}
@@ -387,7 +377,8 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("RemoveFirstPoiLayer")]
 	public void RemoveFirstPoiLayer()
 	{
-		_abstractMap.VectorData.RemovePointsOfInterestSubLayer(_abstractMap.VectorData.GetPointsOfInterestSubLayerAtIndex(0));
+		_abstractMap.VectorData.RemovePointsOfInterestSubLayer(_abstractMap.VectorData
+			.GetPointsOfInterestSubLayerAtIndex(0));
 	}
 
 	[ContextMenu("ToggleCoroutines")]
@@ -399,7 +390,8 @@ public class ApiTest : MonoBehaviour
 	[ContextMenu("ToggleStyleOptimization")]
 	public void ToggleStyleOptimization()
 	{
-		_abstractMap.VectorData.SetLayerSourceWithOptimizedStyle(VectorSourceType.MapboxStreets, "styleId", "date", "name");
+		_abstractMap.VectorData.SetLayerSourceWithOptimizedStyle(VectorSourceType.MapboxStreets, "styleId", "date",
+			"name");
 	}
 
 	[ContextMenu("Switch First Layer To Custom Style")]
@@ -407,15 +399,12 @@ public class ApiTest : MonoBehaviour
 	{
 		var layer = _abstractMap.VectorData.GetFeatureSubLayerAtIndex(0);
 		layer.CreateCustomStyle(
-			new List<MeshModifier>()
+			new List<MeshModifier>
 			{
 				ScriptableObject.CreateInstance<PolygonMeshModifier>(),
 				ScriptableObject.CreateInstance<HeightModifier>()
 			},
-			new List<GameObjectModifier>()
-			{
-
-			});
+			new List<GameObjectModifier>());
 	}
 
 	[ContextMenu("Add Polygon Mesh Modifier")]
@@ -436,10 +425,8 @@ public class ApiTest : MonoBehaviour
 	public void GetHeightMeshModifier()
 	{
 		var layer = _abstractMap.VectorData.GetFeatureSubLayerAtIndex(0);
-		foreach (var mm in layer.BehaviorModifiers.GetMeshModifier(x => x is HeightModifier || x is TextureSideWallModifier))
-		{
-			Debug.Log(mm.GetType().Name);
-		}
+		foreach (var mm in layer.BehaviorModifiers.GetMeshModifier(x =>
+			         x is HeightModifier || x is TextureSideWallModifier)) Debug.Log(mm.GetType().Name);
 	}
 
 	[ContextMenu("Debug Material Modifier Names")]
@@ -447,9 +434,7 @@ public class ApiTest : MonoBehaviour
 	{
 		var layer = _abstractMap.VectorData.GetFeatureSubLayerAtIndex(0);
 		foreach (var mm in layer.BehaviorModifiers.GetGameObjectModifier(x => x is MaterialModifier))
-		{
 			Debug.Log(mm.GetType().Name);
-		}
 	}
 
 	[ContextMenu("Remove Material Modifier")]

@@ -1,53 +1,49 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using Mapbox.Unity.MeshGeneration.Factories;
-	using Mapbox.Unity.MeshGeneration.Interfaces;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using System;
+using Mapbox.Unity.MeshGeneration.Factories;
+using Mapbox.Unity.MeshGeneration.Interfaces;
+using Mapbox.Unity.MeshGeneration.Modifiers;
 
-	public class LayerUpdateArgs : System.EventArgs
+namespace Mapbox.Unity.Map
+{
+	public class LayerUpdateArgs : EventArgs
 	{
+		public bool effectsVectorLayer;
 		public AbstractTileFactory factory;
 		public MapboxDataProperty property;
-		public bool effectsVectorLayer;
 	}
 
 	public class VectorLayerUpdateArgs : LayerUpdateArgs
 	{
-		public LayerVisualizerBase visualizer;
 		public ModifierBase modifier;
+		public LayerVisualizerBase visualizer;
 	}
 
 	public class AbstractLayer
 	{
-		public event System.EventHandler UpdateLayer;
+		public event EventHandler UpdateLayer;
+
 		protected virtual void NotifyUpdateLayer(LayerUpdateArgs layerUpdateArgs)
 		{
-			System.EventHandler handler = UpdateLayer;
-			if (handler != null)
-			{
-				handler(this, layerUpdateArgs);
-			}
+			var handler = UpdateLayer;
+			if (handler != null) handler(this, layerUpdateArgs);
 		}
-		protected virtual void NotifyUpdateLayer(AbstractTileFactory factory, MapboxDataProperty prop, bool effectsVectorLayer = false)
+
+		protected virtual void NotifyUpdateLayer(AbstractTileFactory factory, MapboxDataProperty prop,
+			bool effectsVectorLayer = false)
 		{
-			System.EventHandler handler = UpdateLayer;
+			var handler = UpdateLayer;
 			if (handler != null)
 			{
-				LayerUpdateArgs layerUpdateArgs =
-					(factory is VectorTileFactory) ?
-					new VectorLayerUpdateArgs
-					{
-						factory = factory,
-						effectsVectorLayer = effectsVectorLayer,
-						property = prop
-					}
-					:
-					new LayerUpdateArgs
-					{
-						factory = factory,
-						effectsVectorLayer = effectsVectorLayer,
-						property = prop
-					};
+				var layerUpdateArgs =
+					factory is VectorTileFactory
+						? new VectorLayerUpdateArgs
+						{
+							factory = factory, effectsVectorLayer = effectsVectorLayer, property = prop
+						}
+						: new LayerUpdateArgs
+						{
+							factory = factory, effectsVectorLayer = effectsVectorLayer, property = prop
+						};
 				handler(this, layerUpdateArgs);
 			}
 		}

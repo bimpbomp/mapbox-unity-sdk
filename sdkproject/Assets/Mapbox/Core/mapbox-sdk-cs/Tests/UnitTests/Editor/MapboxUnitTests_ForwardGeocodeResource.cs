@@ -4,44 +4,43 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using Mapbox.Geocoding;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using System;
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
-
 	[TestFixture]
 	internal class ForwardGeocodeResourceTest
 	{
-		private const string _query = "Minneapolis, MN";
-		private Geocoding.ForwardGeocodeResource _forwardGeocodeResource;
-
 		[SetUp]
 		public void SetUp()
 		{
-			_forwardGeocodeResource = new Geocoding.ForwardGeocodeResource(_query);
+			_forwardGeocodeResource = new ForwardGeocodeResource(_query);
 		}
+
+		private const string _query = "Minneapolis, MN";
+		private ForwardGeocodeResource _forwardGeocodeResource;
 
 		public void BadType()
 		{
-			_forwardGeocodeResource.Types = new string[] { "fake" };
+			_forwardGeocodeResource.Types = new[] { "fake" };
 		}
 
 		public void BadTypeWithGoodType()
 		{
-			_forwardGeocodeResource.Types = new string[] { "place", "fake" };
+			_forwardGeocodeResource.Types = new[] { "place", "fake" };
 		}
 
 		public void BadCountry()
 		{
-			_forwardGeocodeResource.Types = new string[] { "zz" };
+			_forwardGeocodeResource.Types = new[] { "zz" };
 		}
 
 		public void BadCountryWithGoodType()
 		{
-			_forwardGeocodeResource.Types = new string[] { "zz", "ar" };
+			_forwardGeocodeResource.Types = new[] { "zz", "ar" };
 		}
 
 		[Test]
@@ -67,7 +66,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			UnityEngine.Debug.LogWarning("ForwardGeocodeResourceTest.GetUrl() TODO: find proper fix for encoded url parameters crashing on some iPhones");
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json", _forwardGeocodeResource.GetUrl());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
@@ -76,7 +76,9 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false", _forwardGeocodeResource.GetUrl());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
@@ -85,25 +87,31 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
 			// With one country
-			_forwardGeocodeResource.Country = new string[] { "ar" };
+			_forwardGeocodeResource.Country = new[] { "ar" };
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
 			// With multiple countries
-			_forwardGeocodeResource.Country = new string[] { "ar", "fi" };
+			_forwardGeocodeResource.Country = new[] { "ar", "fi" };
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
@@ -112,25 +120,31 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
 			// With one types
-			_forwardGeocodeResource.Types = new string[] { "country" };
+			_forwardGeocodeResource.Types = new[] { "country" };
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 
 			// With multiple types
-			_forwardGeocodeResource.Types = new string[] { "country", "region" };
+			_forwardGeocodeResource.Types = new[] { "country", "region" };
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country%2Cregion".ToLower(), _forwardGeocodeResource.GetUrl().ToLower());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country%2Cregion", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual(
+				"https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json?autocomplete=false&bbox=10.00000%2C15.00000%2C20.00000%2C25.00000&country=ar%2Cfi&proximity=5.00000%2C10.00000&types=country%2Cregion",
+				_forwardGeocodeResource.GetUrl());
 #endif
 
 			// Set all to null
@@ -143,7 +157,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 #if UNITY_IOS
 			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis++MN.json", _forwardGeocodeResource.GetUrl());
 #else
-			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json", _forwardGeocodeResource.GetUrl());
+			Assert.AreEqual("https://api.mapbox.com/geocoding/v5/mapbox.places/Minneapolis%2C%20MN.json",
+				_forwardGeocodeResource.GetUrl());
 #endif
 		}
 	}

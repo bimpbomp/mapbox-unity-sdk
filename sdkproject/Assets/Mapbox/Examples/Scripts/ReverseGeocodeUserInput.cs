@@ -3,66 +3,60 @@
 //     Copyright (c) 2016 Mapbox. All rights reserved.
 // </copyright>
 //-----------------------------------------------------------------------
+
+using System;
+using Mapbox.Geocoding;
+using Mapbox.Unity;
+using Mapbox.Unity.Utilities;
+using Mapbox.Utils;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples
 {
-    using Mapbox.Unity;
-    using System;
-    using UnityEngine;
-    using UnityEngine.UI;
-    using Mapbox.Geocoding;
-    using Mapbox.Utils;
-	using Mapbox.Unity.Utilities;
-
-    /// <summary>
-    /// Peforms a reverse geocoder request (search by latitude, longitude) whenever the InputField on *this*
-    /// gameObject is finished with an edit. 
-    /// Expects input in the form of "latitude, longitude"
-    /// </summary>
-    [RequireComponent(typeof(InputField))]
+	/// <summary>
+	///     Peforms a reverse geocoder request (search by latitude, longitude) whenever the InputField on *this*
+	///     gameObject is finished with an edit.
+	///     Expects input in the form of "latitude, longitude"
+	/// </summary>
+	[RequireComponent(typeof(InputField))]
 	public class ReverseGeocodeUserInput : MonoBehaviour
 	{
-		InputField _inputField;
+		private Vector2d _coordinate;
 
-		ReverseGeocodeResource _resource;
+		private Geocoder _geocoder;
 
-		Geocoder _geocoder;
+		private InputField _inputField;
 
-		Vector2d _coordinate;
+		private ReverseGeocodeResource _resource;
 
-		bool _hasResponse;
-		public bool HasResponse
-		{
-			get
-			{
-				return _hasResponse;
-			}
-		}
+		public bool HasResponse { get; private set; }
 
-		public ReverseGeocodeResponse Response { get; private set;}
+		public ReverseGeocodeResponse Response { get; private set; }
 
-		public event EventHandler<EventArgs> OnGeocoderResponse;
-
-		void Awake()
+		private void Awake()
 		{
 			_inputField = GetComponent<InputField>();
 			_inputField.onEndEdit.AddListener(HandleUserInput);
 			_resource = new ReverseGeocodeResource(_coordinate);
 		}
 
-		void Start()
+		private void Start()
 		{
-            _geocoder = MapboxAccess.Instance.Geocoder;
+			_geocoder = MapboxAccess.Instance.Geocoder;
 		}
 
+		public event EventHandler<EventArgs> OnGeocoderResponse;
+
 		/// <summary>
-		/// An edit was made to the InputField.
-		/// Unity will send the string from _inputField.
-		/// Make geocoder query.
+		///     An edit was made to the InputField.
+		///     Unity will send the string from _inputField.
+		///     Make geocoder query.
 		/// </summary>
 		/// <param name="searchString">Search string.</param>
-		void HandleUserInput(string searchString)
+		private void HandleUserInput(string searchString)
 		{
-			_hasResponse = false;
+			HasResponse = false;
 			if (!string.IsNullOrEmpty(searchString))
 			{
 				_coordinate = Conversions.StringToLatLon(searchString);
@@ -72,17 +66,14 @@ namespace Mapbox.Examples
 		}
 
 		/// <summary>
-		/// Handles the geocoder response by updating coordinates and notifying observers.
+		///     Handles the geocoder response by updating coordinates and notifying observers.
 		/// </summary>
 		/// <param name="res">Res.</param>
-		void HandleGeocoderResponse(ReverseGeocodeResponse res)
+		private void HandleGeocoderResponse(ReverseGeocodeResponse res)
 		{
-			_hasResponse = true;
+			HasResponse = true;
 			Response = res;
-			if (OnGeocoderResponse != null)
-			{
-				OnGeocoderResponse(this, EventArgs.Empty);
-			}
+			if (OnGeocoderResponse != null) OnGeocoderResponse(this, EventArgs.Empty);
 		}
 	}
 }

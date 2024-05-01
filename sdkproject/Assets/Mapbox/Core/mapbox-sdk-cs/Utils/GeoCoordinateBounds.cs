@@ -20,63 +20,50 @@ namespace Mapbox.Utils
 		/// <param name="ne"> Geographic coordinate representing northeast corner of bounding box. </param>
 		public Vector2dBounds(Vector2d sw, Vector2d ne)
 		{
-			this.SouthWest = sw;
-			this.NorthEast = ne;
+			SouthWest = sw;
+			NorthEast = ne;
 		}
 
 		/// <summary> Gets the south latitude. </summary>
 		/// <value> The south latitude. </value>
-		public double South {
-			get {
-				return this.SouthWest.x;
-			}
-		}
+		public double South => SouthWest.x;
 
 		/// <summary> Gets the west longitude. </summary>
 		/// <value> The west longitude. </value>
-		public double West {
-			get {
-				return this.SouthWest.y;
-			}
-		}
+		public double West => SouthWest.y;
 
 		/// <summary> Gets the north latitude. </summary>
 		/// <value> The north latitude. </value>
-		public double North {
-			get {
-				return this.NorthEast.x;
-			}
-		}
+		public double North => NorthEast.x;
 
 		/// <summary> Gets the east longitude. </summary>
 		/// <value> The east longitude. </value>
-		public double East {
-			get {
-				return this.NorthEast.y;
-			}
-		}
+		public double East => NorthEast.y;
 
 		/// <summary>
 		///     Gets or sets the central coordinate of the bounding box. When
 		///     setting a new center, the bounding box will retain its original size.
 		/// </summary>
 		/// <value> The central coordinate. </value>
-		public Vector2d Center {
-			get {
-				var lat = (this.SouthWest.x + this.NorthEast.x) / 2;
-				var lng = (this.SouthWest.y + this.NorthEast.y) / 2;
+		public Vector2d Center
+		{
+			get
+			{
+				var lat = (SouthWest.x + NorthEast.x) / 2;
+				var lng = (SouthWest.y + NorthEast.y) / 2;
 
 				return new Vector2d(lat, lng);
 			}
 
-			set {
-				var lat = (this.NorthEast.x - this.SouthWest.x) / 2;
-				this.SouthWest.x = value.x - lat;
-				this.NorthEast.x = value.x + lat;
+			set
+			{
+				var lat = (NorthEast.x - SouthWest.x) / 2;
+				SouthWest.x = value.x - lat;
+				NorthEast.x = value.x + lat;
 
-				var lng = (this.NorthEast.y - this.SouthWest.y) / 2;
-				this.SouthWest.y = value.y - lng;
-				this.NorthEast.y = value.y + lng;
+				var lng = (NorthEast.y - SouthWest.y) / 2;
+				SouthWest.y = value.y - lng;
+				NorthEast.y = value.y + lng;
 			}
 		}
 
@@ -109,56 +96,38 @@ namespace Mapbox.Utils
 		/// <param name="point"> A geographic coordinate. </param>
 		public void Extend(Vector2d point)
 		{
-			if (point.x < this.SouthWest.x)
-			{
-				this.SouthWest.x = point.x;
-			}
+			if (point.x < SouthWest.x) SouthWest.x = point.x;
 
-			if (point.x > this.NorthEast.x)
-			{
-				this.NorthEast.x = point.x;
-			}
+			if (point.x > NorthEast.x) NorthEast.x = point.x;
 
-			if (point.y < this.SouthWest.y)
-			{
-				this.SouthWest.y = point.y;
-			}
+			if (point.y < SouthWest.y) SouthWest.y = point.y;
 
-			if (point.y > this.NorthEast.y)
-			{
-				this.NorthEast.y = point.y;
-			}
+			if (point.y > NorthEast.y) NorthEast.y = point.y;
 		}
 
 		/// <summary> Extend the bounding box to contain the bounding box. </summary>
 		/// <param name="bounds"> A bounding box. </param>
 		public void Extend(Vector2dBounds bounds)
 		{
-			this.Extend(bounds.SouthWest);
-			this.Extend(bounds.NorthEast);
+			Extend(bounds.SouthWest);
+			Extend(bounds.NorthEast);
 		}
 
 		/// <summary> Whenever the geographic bounding box is empty. </summary>
 		/// <returns> <c>true</c>, if empty, <c>false</c> otherwise. </returns>
 		public bool IsEmpty()
 		{
-			return this.SouthWest.x > this.NorthEast.x ||
-					   this.SouthWest.y > this.NorthEast.y;
+			return SouthWest.x > NorthEast.x ||
+			       SouthWest.y > NorthEast.y;
 		}
 
 		/// <summary>
-		/// Converts to an array of doubles.
+		///     Converts to an array of doubles.
 		/// </summary>
 		/// <returns>An array of coordinates.</returns>
 		public double[] ToArray()
 		{
-			double[] array =
-			{
-				this.SouthWest.x,
-				this.SouthWest.y,
-				this.NorthEast.x,
-				this.NorthEast.y
-			};
+			double[] array = { SouthWest.x, SouthWest.y, NorthEast.x, NorthEast.y };
 
 			return array;
 		}
@@ -167,7 +136,7 @@ namespace Mapbox.Utils
 		/// <returns> Returns a string for use in a Mapbox query URL. </returns>
 		public override string ToString()
 		{
-			return string.Format("{0},{1}", this.SouthWest.ToString(), this.NorthEast.ToString());
+			return string.Format("{0},{1}", SouthWest.ToString(), NorthEast.ToString());
 		}
 	}
 }

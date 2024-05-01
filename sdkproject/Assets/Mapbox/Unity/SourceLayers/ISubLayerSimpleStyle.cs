@@ -5,7 +5,4 @@
 		SamplePalettes PaletteType { get; set; }
 		void SetAsStyle(SamplePalettes palette);
 	}
-
 }
-
-

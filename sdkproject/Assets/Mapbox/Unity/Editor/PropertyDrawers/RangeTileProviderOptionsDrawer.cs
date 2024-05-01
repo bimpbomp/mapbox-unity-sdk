@@ -1,13 +1,14 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
+﻿using Mapbox.Unity.Map;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(RangeTileProviderOptions))]
 	public class RangeTileProviderOptionsDrawer : PropertyDrawer
 	{
-		static float lineHeight = EditorGUIUtility.singleLineHeight;
+		private static readonly float lineHeight = EditorGUIUtility.singleLineHeight;
+
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			foreach (var item in property)

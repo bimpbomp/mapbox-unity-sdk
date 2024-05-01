@@ -5,14 +5,13 @@
 //-----------------------------------------------------------------------
 
 
+using System;
+using System.Collections;
+using Mapbox.Platform;
+using UnityEngine.Networking;
+
 namespace Mapbox.Unity.Utilities
 {
-	using System;
-	using UnityEngine.Networking;
-	using System.Collections;
-	using Mapbox.Platform;
-	using UnityEngine;
-
 #if UNITY_EDITOR
 	using UnityEditor;
 #endif
@@ -26,24 +25,20 @@ namespace Mapbox.Unity.Utilities
 
 	internal sealed class HTTPRequest : IAsyncRequest
 	{
-
-		private UnityWebRequest _request;
-		private HttpRequestType _requestType;
-		private int _timeout;
 		private readonly Action<Response> _callback;
 
-		public bool IsCompleted { get; private set; }
-
-		public HttpRequestType RequestType { get { return _requestType; } }
+		private UnityWebRequest _request;
+		private int _timeout;
 
 		// TODO: simplify timeout for Unity 5.6+
 		// https://docs.unity3d.com/ScriptReference/Networking.UnityWebRequest-timeout.html
-		public HTTPRequest(string url, Action<Response> callback, int timeout, HttpRequestType requestType = HttpRequestType.Get)
+		public HTTPRequest(string url, Action<Response> callback, int timeout,
+			HttpRequestType requestType = HttpRequestType.Get)
 		{
 			IsCompleted = false;
-			_requestType = requestType;
+			RequestType = requestType;
 
-			switch (_requestType)
+			switch (RequestType)
 			{
 				case HttpRequestType.Get:
 					_request = UnityWebRequest.Get(url);
@@ -60,20 +55,18 @@ namespace Mapbox.Unity.Utilities
 			_callback = callback;
 
 #if UNITY_EDITOR
-			if (!EditorApplication.isPlaying)
-			{
-				Runnable.EnableRunnableInEditor();
-			}
+			if (!EditorApplication.isPlaying) Runnable.EnableRunnableInEditor();
 #endif
 			Runnable.Run(DoRequest());
 		}
 
+		public bool IsCompleted { get; private set; }
+
+		public HttpRequestType RequestType { get; }
+
 		public void Cancel()
 		{
-			if (_request != null)
-			{
-				_request.Abort();
-			}
+			if (_request != null) _request.Abort();
 		}
 
 		private IEnumerator DoRequest()
@@ -84,7 +77,7 @@ namespace Mapbox.Unity.Utilities
 #pragma warning disable 0618
 			_request.Send();
 #pragma warning restore 0618
-			while (!_request.isDone) { yield return null; }
+			while (!_request.isDone) yield return null;
 #else
 #pragma warning disable 0618
 			yield return _request.Send();

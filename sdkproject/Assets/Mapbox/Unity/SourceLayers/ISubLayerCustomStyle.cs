@@ -7,7 +7,4 @@
 		ISubLayerCustomStyleAtlas TextureAtlas { get; }
 		ISubLayerCustomStyleAtlasWithColorPallete TextureAtlasWithColorPallete { get; }
 	}
-
 }
-
-

@@ -1,14 +1,12 @@
-﻿namespace Mapbox.Unity.MeshGeneration.Data
-{
-	using System;
-	using System.Collections;
-	using System.Collections.Generic;
-	using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
 
+namespace Mapbox.Unity.MeshGeneration.Data
+{
 	public class ObjectPool<T>
 	{
-		private Queue<T> _objects;
-		private Func<T> _objectGenerator;
+		private readonly Func<T> _objectGenerator;
+		private readonly Queue<T> _objects;
 
 		public ObjectPool(Func<T> objectGenerator)
 		{
@@ -40,4 +38,3 @@
 		}
 	}
 }
-

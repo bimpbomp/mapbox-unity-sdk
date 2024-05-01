@@ -4,53 +4,44 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Linq;
+using Mapbox.Geocoding;
+using Mapbox.Map;
+using Mapbox.Unity;
+using Mapbox.Unity.Utilities;
+using Mapbox.Utils;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples.Playground
 {
-	using System.Linq;
-	using System;
-	using Mapbox.Map;
-	using Mapbox.Unity;
-	using UnityEngine;
-	using UnityEngine.UI;
-	using Mapbox.Utils;
-	using Mapbox.Unity.Utilities;
-	using Mapbox.Geocoding;
-
-	public class RasterTileExample : MonoBehaviour, Mapbox.Utils.IObserver<RasterTile>
+	public class RasterTileExample : MonoBehaviour, IObserver<RasterTile>
 	{
-		[SerializeField]
-		ForwardGeocodeUserInput _searchLocation;
+		[SerializeField] private ForwardGeocodeUserInput _searchLocation;
 
-		[SerializeField]
-		Slider _zoomSlider;
+		[SerializeField] private Slider _zoomSlider;
 
-		[SerializeField]
-		Dropdown _stylesDropdown;
+		[SerializeField] private Dropdown _stylesDropdown;
 
-		[SerializeField]
-		RawImage _imageContainer;
+		[SerializeField] private RawImage _imageContainer;
 
-		Map<RasterTile> _map;
+		[Geocode] [SerializeField] private string _latLon;
 
-		[Geocode]
-		[SerializeField]
-		string _latLon;
+		private Map<RasterTile> _map;
 
 		// initialize _mapboxStyles
-		string[] _mapboxStyles = new string[]
+		private readonly string[] _mapboxStyles =
 		{
-			"mapbox://styles/mapbox/satellite-v9",
-			"mapbox://styles/mapbox/streets-v9",
-			"mapbox://styles/mapbox/dark-v9",
-			"mapbox://styles/mapbox/light-v9"
+			"mapbox://styles/mapbox/satellite-v9", "mapbox://styles/mapbox/streets-v9",
+			"mapbox://styles/mapbox/dark-v9", "mapbox://styles/mapbox/light-v9"
 		};
 
+		private int _mapstyle;
+
 		// start location - San Francisco
-		Vector2d _startLoc = new Vector2d();
+		private Vector2d _startLoc;
 
-		int _mapstyle = 0;
-
-		void Awake()
+		private void Awake()
 		{
 			_searchLocation.OnGeocoderResponse += SearchLocation_OnGeocoderResponse;
 			_stylesDropdown.ClearOptions();
@@ -63,15 +54,7 @@ namespace Mapbox.Examples.Playground
 			_startLoc.y = double.Parse(parsed[1]);
 		}
 
-		void OnDestroy()
-		{
-			if (_searchLocation != null)
-			{
-				_searchLocation.OnGeocoderResponse -= SearchLocation_OnGeocoderResponse;
-			}
-		}
-
-		void Start()
+		private void Start()
 		{
 			_map = new Map<RasterTile>(MapboxAccess.Instance);
 			_map.TilesetId = _mapboxStyles[_mapstyle];
@@ -81,40 +64,13 @@ namespace Mapbox.Examples.Playground
 			_map.Update();
 		}
 
-		/// <summary>
-		/// New search location has become available, begin a new _map query.
-		/// </summary>
-		/// <param name="sender">Sender.</param>
-		/// <param name="e">E.</param>
-		void SearchLocation_OnGeocoderResponse(ForwardGeocodeResponse response)
+		private void OnDestroy()
 		{
-			_map.Center = _searchLocation.Coordinate;
-			_map.Update();
+			if (_searchLocation != null) _searchLocation.OnGeocoderResponse -= SearchLocation_OnGeocoderResponse;
 		}
 
 		/// <summary>
-		/// Zoom was modified by the slider, begin a new _map query.
-		/// </summary>
-		/// <param name="value">Value.</param>
-		void AdjustZoom(float value)
-		{
-			_map.Zoom = (int)_zoomSlider.value;
-			_map.Update();
-		}
-
-		/// <summary>
-		/// Style dropdown updated, begin a new _map query.
-		/// </summary>
-		/// <param name="value">If set to <c>true</c> value.</param>
-		void ToggleDropdownStyles(int target)
-		{
-			_mapstyle = target;
-			_map.TilesetId = _mapboxStyles[target];
-			_map.Update();
-		}
-
-		/// <summary>
-		/// Update the texture with new data.
+		///     Update the texture with new data.
 		/// </summary>
 		/// <param name="tile">Tile.</param>
 		public void OnNext(RasterTile tile)
@@ -123,14 +79,44 @@ namespace Mapbox.Examples.Playground
 				tile.HasError
 				|| (tile.CurrentState != Tile.State.Loaded && tile.CurrentState != Tile.State.Updated)
 			)
-			{
 				return;
-			}
 
 			// Can we utility this? Should users have to know source size?
 			var texture = new Texture2D(256, 256);
 			texture.LoadImage(tile.Data);
 			_imageContainer.texture = texture;
+		}
+
+		/// <summary>
+		///     New search location has become available, begin a new _map query.
+		/// </summary>
+		/// <param name="sender">Sender.</param>
+		/// <param name="e">E.</param>
+		private void SearchLocation_OnGeocoderResponse(ForwardGeocodeResponse response)
+		{
+			_map.Center = _searchLocation.Coordinate;
+			_map.Update();
+		}
+
+		/// <summary>
+		///     Zoom was modified by the slider, begin a new _map query.
+		/// </summary>
+		/// <param name="value">Value.</param>
+		private void AdjustZoom(float value)
+		{
+			_map.Zoom = (int)_zoomSlider.value;
+			_map.Update();
+		}
+
+		/// <summary>
+		///     Style dropdown updated, begin a new _map query.
+		/// </summary>
+		/// <param name="value">If set to <c>true</c> value.</param>
+		private void ToggleDropdownStyles(int target)
+		{
+			_mapstyle = target;
+			_map.TilesetId = _mapboxStyles[target];
+			_map.Update();
 		}
 	}
 }

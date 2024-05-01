@@ -1,16 +1,16 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using Mapbox.Unity.MeshGeneration.Modifiers;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomEditor(typeof(LayerModifier))]
-	public class LayerModifierEditor : Editor
+	public class LayerModifierEditor : UnityEditor.Editor
 	{
 		public SerializedProperty layerId_Prop;
 		private MonoScript script;
 
-		void OnEnable()
+		private void OnEnable()
 		{
 			layerId_Prop = serializedObject.FindProperty("_layerId");
 

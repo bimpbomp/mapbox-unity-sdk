@@ -4,27 +4,23 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using Mapbox.Map;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using System;
-	using System.Collections.Generic;
-	using Mapbox.Map;
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
-
 	[TestFixture]
 	internal class TileCoverTest
 	{
-
-
 		[Test]
 		public void World()
 		{
 			// Zoom > 8 will generate so many tiles that we
 			// might run out of memory.
-			for (int zoom = 0; zoom < 8; ++zoom)
+			for (var zoom = 0; zoom < 8; ++zoom)
 			{
 				var tiles = TileCover.Get(Vector2dBounds.World(), zoom);
 				Assert.AreEqual(Math.Pow(4, zoom), tiles.Count);
@@ -57,7 +53,5 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			var list3 = new List<CanonicalTileId>(set3);
 			Assert.AreEqual("0/0/0", list3[0].ToString());
 		}
-
-
 	}
 }

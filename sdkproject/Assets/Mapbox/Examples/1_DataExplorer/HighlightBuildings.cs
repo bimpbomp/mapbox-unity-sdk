@@ -1,22 +1,22 @@
-﻿namespace Mapbox.Examples
-{
-	using KDTree;
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration;
-	using Mapbox.Unity.MeshGeneration.Data;
+﻿using KDTree;
+using Mapbox.Unity.MeshGeneration;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class HighlightBuildings : MonoBehaviour
 	{
 		public KdTreeCollection Collection;
 		public int MaxCount = 100;
 		public float Range = 10;
-		Ray ray;
-		Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-		Vector3 pos;
-		float rayDistance;
+		private Plane groundPlane = new(Vector3.up, Vector3.zero);
 		private NearestNeighbour<VectorEntity> pIter;
+		private Vector3 pos;
+		private Ray ray;
+		private float rayDistance;
 
-		void Update()
+		private void Update()
 		{
 			if (Input.GetMouseButton(0))
 			{
@@ -25,10 +25,7 @@
 				{
 					pos = ray.GetPoint(rayDistance);
 					pIter = Collection.NearestNeighbors(new double[] { pos.x, pos.z }, MaxCount, Range);
-					while (pIter.MoveNext())
-					{
-						pIter.Current.Transform.localScale = Vector3.zero;
-					}
+					while (pIter.MoveNext()) pIter.Current.Transform.localScale = Vector3.zero;
 				}
 			}
 		}

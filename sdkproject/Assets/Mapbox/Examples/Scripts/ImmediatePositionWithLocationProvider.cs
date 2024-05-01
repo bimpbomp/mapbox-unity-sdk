@@ -1,36 +1,33 @@
-﻿namespace Mapbox.Examples
-{
-	using Mapbox.Unity.Location;
-	using Mapbox.Unity.Map;
-	using UnityEngine;
+﻿using Mapbox.Unity.Location;
+using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class ImmediatePositionWithLocationProvider : MonoBehaviour
 	{
+		private bool _isInitialized;
 
-		bool _isInitialized;
+		private ILocationProvider _locationProvider;
 
-		ILocationProvider _locationProvider;
-		ILocationProvider LocationProvider
+		private Vector3 _targetPosition;
+
+		private ILocationProvider LocationProvider
 		{
 			get
 			{
 				if (_locationProvider == null)
-				{
 					_locationProvider = LocationProviderFactory.Instance.DefaultLocationProvider;
-				}
 
 				return _locationProvider;
 			}
 		}
 
-		Vector3 _targetPosition;
-
-		void Start()
+		private void Start()
 		{
 			LocationProviderFactory.Instance.mapManager.OnInitialized += () => _isInitialized = true;
 		}
 
-		void LateUpdate()
+		private void LateUpdate()
 		{
 			if (_isInitialized)
 			{

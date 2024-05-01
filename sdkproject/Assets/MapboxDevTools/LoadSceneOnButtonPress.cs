@@ -1,21 +1,21 @@
-﻿namespace Utilities
-{
-	using UnityEngine;
-	using UnityEngine.UI;
-	using UnityEngine.SceneManagement;
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
+namespace Utilities
+{
 	[RequireComponent(typeof(Button))]
 	public class LoadSceneOnButtonPress : MonoBehaviour
 	{
-		Button _button;
+		private Button _button;
 
-		void Awake()
+		private void Awake()
 		{
 			_button = GetComponent<Button>();
 			_button.onClick.AddListener(LoadScene);
 		}
 
-		void LoadScene()
+		private void LoadScene()
 		{
 			var scenePath = GetComponentInChildren<Text>().text;
 			SceneManager.LoadScene(scenePath);

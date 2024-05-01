@@ -4,79 +4,42 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using Mapbox.Map;
+using Mapbox.Utils;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using System.Collections.Generic;
-	using Mapbox.Map;
-
-
 	internal static class Utils
 	{
-		internal class VectorMapObserver : Mapbox.Utils.IObserver<VectorTile>
+		internal class VectorMapObserver : IObserver<Map.VectorTile>
 		{
-			private List<VectorTile> tiles = new List<VectorTile>();
+			public List<Map.VectorTile> Tiles { get; } = new();
 
-			public List<VectorTile> Tiles
+			public void OnNext(Map.VectorTile tile)
 			{
-				get
-				{
-					return tiles;
-				}
-			}
-
-			public void OnNext(VectorTile tile)
-			{
-				if (tile.CurrentState == Tile.State.Loaded)
-				{
-					tiles.Add(tile);
-				}
+				if (tile.CurrentState == Tile.State.Loaded) Tiles.Add(tile);
 			}
 		}
 
-		internal class RasterMapObserver : Mapbox.Utils.IObserver<RasterTile>
+		internal class RasterMapObserver : IObserver<RasterTile>
 		{
-			private List<byte[]> tiles = new List<byte[]>();
-
-			public List<byte[]> Tiles
-			{
-				get
-				{
-					return tiles;
-				}
-			}
+			public List<byte[]> Tiles { get; } = new();
 
 			public void OnNext(RasterTile tile)
 			{
-				if (tile.CurrentState == Tile.State.Loaded && !tile.HasError)
-				{
-					tiles.Add(tile.Data);
-				}
+				if (tile.CurrentState == Tile.State.Loaded && !tile.HasError) Tiles.Add(tile.Data);
 			}
 		}
 
-		internal class ClassicRasterMapObserver : Mapbox.Utils.IObserver<ClassicRasterTile>
+		internal class ClassicRasterMapObserver : IObserver<ClassicRasterTile>
 		{
-			private List<byte[]> tiles = new List<byte[]>();
-
-			public List<byte[]> Tiles
-			{
-				get
-				{
-					return tiles;
-				}
-			}
+			public List<byte[]> Tiles { get; } = new();
 
 			public void OnNext(ClassicRasterTile tile)
 			{
-				if (tile.CurrentState == Tile.State.Loaded && !tile.HasError)
-				{
-					tiles.Add(tile.Data);
-				}
+				if (tile.CurrentState == Tile.State.Loaded && !tile.HasError) Tiles.Add(tile.Data);
 			}
 		}
-
-
-
 	}
 }

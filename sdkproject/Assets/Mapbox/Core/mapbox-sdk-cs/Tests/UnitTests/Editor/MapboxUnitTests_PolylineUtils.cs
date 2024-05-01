@@ -4,32 +4,28 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System.Collections.Generic;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using System.Collections.Generic;
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
-
 	/// <summary>Polyline utils test.</summary>
 	[TestFixture]
 	public class PolylineUtilsTest
 	{
-
-
 		/// <summary>
-		/// Tests the decode.
+		///     Tests the decode.
 		/// </summary>
 		/// <remarks>
-		/// Sample values from https://developers.google.com/maps/documentation/utilities/polylinealgorithm.
-		/// </remarks>    
+		///     Sample values from https://developers.google.com/maps/documentation/utilities/polylinealgorithm.
+		/// </remarks>
 		[Test]
 		public void TestDecode()
 		{
 			// _p~iF~ps|U_ulLnnqC_mqNvxq`@
-			List<Vector2d> path = PolylineUtils.Decode(
-			  "_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+			var path = PolylineUtils.Decode(
+				"_p~iF~ps|U_ulLnnqC_mqNvxq`@");
 
 			// (38.5, -120.2), (40.7, -120.95), (43.252, -126.453)
 			Assert.AreEqual(-120.2, path[0].y);
@@ -54,7 +50,5 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			// _p~iF~ps|U_ulLnnqC_mqNvxq`@
 			Assert.AreEqual("_p~iF~ps|U_ulLnnqC_mqNvxq`@", PolylineUtils.Encode(path));
 		}
-
-
 	}
 }

@@ -4,37 +4,37 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using Mapbox.Platform;
+using Mapbox.Utils;
+
 namespace Mapbox.Map
 {
-	using System;
-	using System.Collections.Generic;
-	using Mapbox.Platform;
-	using Mapbox.Utils;
-
 	/// <summary>
 	///     The Mapbox Map abstraction will take care of fetching and decoding
 	///     data for a geographic bounding box at a certain zoom level.
 	/// </summary>
 	/// <typeparam name="T">
-	///     The tile type, currently <see cref="T:Mapbox.Map.Vector"/> or
-	///     <see cref="T:Mapbox.Map.Raster"/>.
+	///     The tile type, currently <see cref="T:Mapbox.Map.Vector" /> or
+	///     <see cref="T:Mapbox.Map.Raster" />.
 	/// </typeparam>
 	/// <example>
-	/// Request a map of the whole world:
-	/// <code>
+	///     Request a map of the whole world:
+	///     <code>
 	/// var map = new Map&lt;RasterTile&gt;(MapboxAccess.Instance);
 	/// map.Zoom = 2
 	/// map.Vector2dBounds = Vector2dBounds.World();
 	/// map.TilesetId = "mapbox://styles/mapbox/streets-v10
-	///
+	/// 
 	/// // Register for tile updates.
 	/// map.Subscribe(this);
-	///
+	/// 
 	/// // Trigger the request.
 	/// map.Update();
 	/// </code>
 	/// </example>
-	public sealed class Map<T> : Mapbox.Utils.IObservable<T> where T : Tile, new()
+	public sealed class Map<T> : Utils.IObservable<T> where T : Tile, new()
 	{
 		/// <summary>
 		///     Arbitrary limit of tiles this class will handle simultaneously.
@@ -43,21 +43,20 @@ namespace Mapbox.Map
 
 		private readonly IFileSource fs;
 		private Vector2dBounds latLngBounds;
-		private int zoom;
-		private string tilesetId;
+		private readonly List<Utils.IObserver<T>> observers = new();
 
-		private HashSet<T> tiles = new HashSet<T>();
-		private List<Mapbox.Utils.IObserver<T>> observers = new List<Mapbox.Utils.IObserver<T>>();
+		private string tilesetId;
+		private int zoom;
 
 		/// <summary>
-		///     Initializes a new instance of the <see cref="T:Mapbox.Map.Map`1"/> class.
+		///     Initializes a new instance of the <see cref="T:Mapbox.Map.Map`1" /> class.
 		/// </summary>
 		/// <param name="fs"> The data source abstraction. </param>
 		public Map(IFileSource fs)
 		{
 			this.fs = fs;
-			this.latLngBounds = new Vector2dBounds();
-			this.zoom = 0;
+			latLngBounds = new Vector2dBounds();
+			zoom = 0;
 		}
 
 		/// <summary>
@@ -67,31 +66,22 @@ namespace Mapbox.Map
 		/// </summary>
 		/// <value>
 		///     The tileset ID, usually in the format "user.mapid". Exceptionally,
-		///     <see cref="T:Mapbox.Map.RasterTile"/> will take the full style URL
+		///     <see cref="T:Mapbox.Map.RasterTile" /> will take the full style URL
 		///     from where the tile is composited from, like "mapbox://styles/mapbox/streets-v9".
 		/// </value>
 		public string TilesetId
 		{
-			get
-			{
-				return this.tilesetId;
-			}
+			get => tilesetId;
 
 			set
 			{
-				if (this.tilesetId == value)
-				{
-					return;
-				}
+				if (tilesetId == value) return;
 
-				this.tilesetId = value;
+				tilesetId = value;
 
-				foreach (Tile tile in this.tiles)
-				{
-					tile.Cancel();
-				}
+				foreach (Tile tile in Tiles) tile.Cancel();
 
-				this.tiles.Clear();
+				Tiles.Clear();
 			}
 		}
 
@@ -100,57 +90,47 @@ namespace Mapbox.Map
 		///     in a incomplete state.
 		/// </summary>
 		/// <value> The tiles. </value>
-		public HashSet<T> Tiles
-		{
-			get
-			{
-				return this.tiles;
-			}
-		}
+		public HashSet<T> Tiles { get; } = new();
 
 		/// <summary>Gets or sets a geographic bounding box.</summary>
 		/// <value>New geographic bounding box.</value>
 		public Vector2dBounds Vector2dBounds
 		{
-			get
-			{
-				return this.latLngBounds;
-			}
+			get => latLngBounds;
 
-			set
-			{
-				this.latLngBounds = value;
-			}
+			set => latLngBounds = value;
 		}
 
 		/// <summary>Gets or sets the central coordinate of the map.</summary>
 		/// <value>The central coordinate.</value>
 		public Vector2d Center
 		{
-			get
-			{
-				return this.latLngBounds.Center;
-			}
+			get => latLngBounds.Center;
 
-			set
-			{
-				this.latLngBounds.Center = value;
-			}
+			set => latLngBounds.Center = value;
 		}
 
 		/// <summary>Gets or sets the map zoom level.</summary>
 		/// <value>The new zoom level.</value>
 		public int Zoom
 		{
-			get
-			{
-				return this.zoom;
-			}
+			get => zoom;
 
-			set
-			{
-				this.zoom = Math.Max(0, Math.Min(20, value));
-			}
+			set => zoom = Math.Max(0, Math.Min(20, value));
+		}
+
+		/// <summary> Add an <see cref="T:IObserver" /> to the observer list. </summary>
+		/// <param name="observer"> The object subscribing to events. </param>
+		public void Subscribe(Utils.IObserver<T> observer)
+		{
+			observers.Add(observer);
+		}
+
+		/// <summary> Remove an <see cref="T:IObserver" /> to the observer list. </summary>
+		/// <param name="observer"> The object unsubscribing to events. </param>
+		public void Unsubscribe(Utils.IObserver<T> observer)
+		{
+			observers.Remove(observer);
 		}
 
 		/// <summary>
@@ -160,76 +140,54 @@ namespace Mapbox.Map
 		/// <param name="zoom"> Zoom level. </param>
 		public void SetVector2dBoundsZoom(Vector2dBounds bounds, int zoom)
 		{
-			this.latLngBounds = bounds;
+			latLngBounds = bounds;
 			this.zoom = zoom;
-		}
-
-		/// <summary> Add an <see cref="T:IObserver" /> to the observer list. </summary>
-		/// <param name="observer"> The object subscribing to events. </param>
-		public void Subscribe(Mapbox.Utils.IObserver<T> observer)
-		{
-			this.observers.Add(observer);
-		}
-
-		/// <summary> Remove an <see cref="T:IObserver" /> to the observer list. </summary>
-		/// <param name="observer"> The object unsubscribing to events. </param>
-		public void Unsubscribe(Mapbox.Utils.IObserver<T> observer)
-		{
-			this.observers.Remove(observer);
 		}
 
 		private void NotifyNext(T next)
 		{
-			var copy = new List<Mapbox.Utils.IObserver<T>>(this.observers);
+			var copy = new List<Utils.IObserver<T>>(observers);
 
-			foreach (Mapbox.Utils.IObserver<T> observer in copy)
-			{
-				observer.OnNext(next);
-			}
+			foreach (var observer in copy) observer.OnNext(next);
 		}
 
 		/// <summary>
-		/// Request tiles after changing map properties.
+		///     Request tiles after changing map properties.
 		/// </summary>
 		public void Update()
 		{
-			var cover = TileCover.Get(this.latLngBounds, this.zoom);
+			var cover = TileCover.Get(latLngBounds, zoom);
 
-			if (cover.Count > TileMax)
-			{
-				return;
-			}
+			if (cover.Count > TileMax) return;
 
 			// Do not request tiles that we are already requesting
 			// but at the same time exclude the ones we don't need
 			// anymore, cancelling the network request.
-			this.tiles.RemoveWhere((T tile) =>
+			Tiles.RemoveWhere(tile =>
+			{
+				if (cover.Remove(tile.Id))
 				{
-					if (cover.Remove(tile.Id))
-					{
-						return false;
-					}
-					else
-					{
-						tile.Cancel();
-						this.NotifyNext(tile);
+					return false;
+				}
 
-						return true;
-					}
-				});
+				tile.Cancel();
+				NotifyNext(tile);
 
-			foreach (CanonicalTileId id in cover)
+				return true;
+			});
+
+			foreach (var id in cover)
 			{
 				var tile = new T();
 
 				Tile.Parameters param;
 				param.Id = id;
-				param.TilesetId = this.tilesetId;
-				param.Fs = this.fs;
+				param.TilesetId = tilesetId;
+				param.Fs = fs;
 
-				tile.Initialize(param, () => { this.NotifyNext(tile); });
+				tile.Initialize(param, () => { NotifyNext(tile); });
 
-				this.tiles.Add(tile);
+				Tiles.Add(tile);
 			}
 		}
 	}

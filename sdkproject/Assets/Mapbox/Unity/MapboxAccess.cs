@@ -1,85 +1,171 @@
+using System;
+using System.IO;
+using Mapbox.Geocoding;
+using Mapbox.Map;
+using Mapbox.MapMatching;
+using Mapbox.Platform;
+using Mapbox.Platform.Cache;
+using Mapbox.Platform.TilesetTileJSON;
+using Mapbox.Tokens;
+using Mapbox.Unity.Telemetry;
 using MapboxAccountsUnity;
+using UnityEngine;
 
 namespace Mapbox.Unity
 {
-	using UnityEngine;
-	using System;
-	using System.IO;
-	using Mapbox.Geocoding;
-	using Mapbox.Directions;
-	using Mapbox.Platform;
-	using Mapbox.Platform.Cache;
-	using Mapbox.Unity.Telemetry;
-	using Mapbox.Map;
-	using Mapbox.MapMatching;
-	using Mapbox.Tokens;
-	using Mapbox.Platform.TilesetTileJSON;
-
 	/// <summary>
-	/// Object for retrieving an API token and making http requests.
-	/// Contains a lazy <see cref="T:Mapbox.Geocoding.Geocoder">Geocoder</see> and a lazy <see cref="T:Mapbox.Directions.Directions">Directions</see> for convenience.
+	///     Object for retrieving an API token and making http requests.
+	///     Contains a lazy <see cref="T:Mapbox.Geocoding.Geocoder">Geocoder</see> and a lazy
+	///     <see cref="T:Mapbox.Directions.Directions">Directions</see> for convenience.
 	/// </summary>
 	public class MapboxAccess : IFileSource
 	{
-		ITelemetryLibrary _telemetryLibrary;
-		CachingWebFileSource _fileSource;
-
 		public delegate void TokenValidationEvent(MapboxTokenStatus response);
-		public event TokenValidationEvent OnTokenValidation;
 
 		private static MapboxAccess _instance;
 
+
+		public static bool Configured;
+		public static string ConfigurationJSON;
+
+
+		private Directions.Directions _directions;
+		private CachingWebFileSource _fileSource;
+
+
+		private Geocoder _geocoder;
+
+		private MapMatcher _mapMatcher;
+		private ITelemetryLibrary _telemetryLibrary;
+
+
+		private TileJSON _tileJson;
+
+		private readonly string _tokenNotSetErrorMessage =
+			"No configuration file found! Configure your access token from the Mapbox > Setup menu.";
+
+
+		private MapboxTokenApi _tokenValidator;
+
+		private MapboxAccess()
+		{
+			LoadAccessToken();
+			if (null == Configuration || string.IsNullOrEmpty(Configuration.AccessToken))
+				Debug.LogError(_tokenNotSetErrorMessage);
+		}
+
 		/// <summary>
-		/// The singleton instance.
+		///     The singleton instance.
 		/// </summary>
 		public static MapboxAccess Instance
 		{
 			get
 			{
-				if (_instance == null)
-				{
-					_instance = new MapboxAccess();
-				}
+				if (_instance == null) _instance = new MapboxAccess();
 				return _instance;
 			}
 		}
 
-
-		public static bool Configured;
-		public static string ConfigurationJSON;
-		private MapboxConfiguration _configuration;
-		private string _tokenNotSetErrorMessage = "No configuration file found! Configure your access token from the Mapbox > Setup menu.";
+		/// <summary>
+		///     The Mapbox API access token.
+		/// </summary>
+		public MapboxConfiguration Configuration { get; private set; }
 
 		/// <summary>
-		/// The Mapbox API access token.
+		///     Lazy geocoder.
 		/// </summary>
-		public MapboxConfiguration Configuration
+		public Geocoder Geocoder
 		{
 			get
 			{
-				return _configuration;
+				if (_geocoder == null)
+					_geocoder = new Geocoder(new FileSource(Instance.Configuration.GetMapsSkuToken,
+						Configuration.AccessToken));
+				return _geocoder;
 			}
 		}
 
-		MapboxAccess()
+		/// <summary>
+		///     Lazy Directions.
+		/// </summary>
+		public Directions.Directions Directions
 		{
-			LoadAccessToken();
-			if (null == _configuration || string.IsNullOrEmpty(_configuration.AccessToken))
+			get
 			{
-				Debug.LogError(_tokenNotSetErrorMessage);
+				if (_directions == null)
+					_directions = new Directions.Directions(new FileSource(Instance.Configuration.GetMapsSkuToken,
+						Configuration.AccessToken));
+				return _directions;
 			}
 		}
+
+		/// <summary>
+		///     Lazy Map Matcher.
+		/// </summary>
+		public MapMatcher MapMatcher
+		{
+			get
+			{
+				if (_mapMatcher == null)
+					_mapMatcher =
+						new MapMatcher(
+							new FileSource(Instance.Configuration.GetMapsSkuToken, Configuration.AccessToken),
+							Configuration.DefaultTimeout);
+				return _mapMatcher;
+			}
+		}
+
+		/// <summary>
+		///     Lazy token validator.
+		/// </summary>
+		public MapboxTokenApi TokenValidator
+		{
+			get
+			{
+				if (_tokenValidator == null) _tokenValidator = new MapboxTokenApi();
+				return _tokenValidator;
+			}
+		}
+
+		/// <summary>
+		///     Lazy TileJSON wrapper: https://www.mapbox.com/api-documentation/maps/#retrieve-tilejson-metadata
+		/// </summary>
+		public TileJSON TileJSON
+		{
+			get
+			{
+				if (_tileJson == null)
+					_tileJson = new TileJSON(
+						new FileSource(Instance.Configuration.GetMapsSkuToken, Configuration.AccessToken),
+						Configuration.DefaultTimeout);
+				return _tileJson;
+			}
+		}
+
+		/// <summary>
+		///     Makes an asynchronous url query.
+		/// </summary>
+		/// <returns>The request.</returns>
+		/// <param name="url">URL.</param>
+		/// <param name="callback">Callback.</param>
+		public IAsyncRequest Request(
+			string url
+			, Action<Response> callback
+			, int timeout = 10
+			, CanonicalTileId tileId = new()
+			, string tilesetId = null
+		)
+		{
+			return _fileSource.Request(url, callback, Configuration.DefaultTimeout, tileId, tilesetId);
+		}
+
+		public event TokenValidationEvent OnTokenValidation;
 
 		public void SetConfiguration(MapboxConfiguration configuration, bool throwExecptions = true)
 		{
 			if (configuration == null)
-			{
 				if (throwExecptions)
-				{
 					throw new InvalidTokenException(_tokenNotSetErrorMessage);
-				}
-
-			}
 
 			if (null == configuration || string.IsNullOrEmpty(configuration.AccessToken))
 			{
@@ -87,22 +173,19 @@ namespace Mapbox.Unity
 			}
 			else
 			{
-				TokenValidator.Retrieve(configuration.GetMapsSkuToken, configuration.AccessToken, (response) =>
+				TokenValidator.Retrieve(configuration.GetMapsSkuToken, configuration.AccessToken, response =>
 				{
-					if (OnTokenValidation != null)
-					{
-						OnTokenValidation(response.Status);
-					}
+					if (OnTokenValidation != null) OnTokenValidation(response.Status);
 
 					if (response.Status != MapboxTokenStatus.TokenValid
-					   && throwExecptions)
+					    && throwExecptions)
 					{
 						configuration.AccessToken = string.Empty;
 						Debug.LogError(new InvalidTokenException(response.Status.ToString().ToString()));
 					}
 				});
 
-				_configuration = configuration;
+				Configuration = configuration;
 
 				ConfigureFileSource();
 				ConfigureTelemetry();
@@ -115,15 +198,14 @@ namespace Mapbox.Unity
 		public void ClearAllCacheFiles()
 		{
 			// explicity call Clear() to close any connections that might be referenced by the current scene
-			CachingWebFileSource cwfs = _fileSource as CachingWebFileSource;
-			if (null != cwfs) { cwfs.Clear(); }
+			var cwfs = _fileSource;
+			if (null != cwfs) cwfs.Clear();
 
 			// remove all left over files (eg orphaned .journal) from the cache directory
-			string cacheDirectory = Path.Combine(Application.persistentDataPath, "cache");
-			if (!Directory.Exists(cacheDirectory)) { return; }
+			var cacheDirectory = Path.Combine(Application.persistentDataPath, "cache");
+			if (!Directory.Exists(cacheDirectory)) return;
 
 			foreach (var file in Directory.GetFiles(cacheDirectory))
-			{
 				try
 				{
 					File.Delete(file);
@@ -132,27 +214,24 @@ namespace Mapbox.Unity
 				{
 					Debug.LogErrorFormat("Could not delete [{0}]: {1}", file, deleteEx);
 				}
-			}
 
 			//reinit caches after clear
-			if (null != cwfs) { cwfs.ReInit(); }
+			if (null != cwfs) cwfs.ReInit();
 
 			Debug.Log("done clearing caches");
 		}
 
 		/// <summary>
-		/// Loads the access token from <see href="https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity6.html">Resources folder</see>.
+		///     Loads the access token from
+		///     <see href="https://docs.unity3d.com/Manual/BestPracticeUnderstandingPerformanceInUnity6.html">Resources folder</see>
+		///     .
 		/// </summary>
 		private void LoadAccessToken()
 		{
-
 			if (string.IsNullOrEmpty(ConfigurationJSON))
 			{
-				TextAsset configurationTextAsset = Resources.Load<TextAsset>(Constants.Path.MAPBOX_RESOURCES_RELATIVE);
-				if (null == configurationTextAsset)
-				{
-					throw new InvalidTokenException(_tokenNotSetErrorMessage);
-				}
+				var configurationTextAsset = Resources.Load<TextAsset>(Constants.Path.MAPBOX_RESOURCES_RELATIVE);
+				if (null == configurationTextAsset) throw new InvalidTokenException(_tokenNotSetErrorMessage);
 				ConfigurationJSON = configurationTextAsset.text;
 			}
 
@@ -165,18 +244,19 @@ namespace Mapbox.Unity
 		}
 
 
-		void ConfigureFileSource()
+		private void ConfigureFileSource()
 		{
-			_fileSource = new CachingWebFileSource(_configuration.AccessToken, _configuration.GetMapsSkuToken, _configuration.AutoRefreshCache)
-				.AddCache(new MemoryCache(_configuration.MemoryCacheSize))
+			_fileSource = new CachingWebFileSource(Configuration.AccessToken, Configuration.GetMapsSkuToken,
+						Configuration.AutoRefreshCache)
+					.AddCache(new MemoryCache(Configuration.MemoryCacheSize))
 #if !UNITY_WEBGL
-				.AddCache(new SQLiteCache(_configuration.FileCacheSize))
+					.AddCache(new SQLiteCache(Configuration.FileCacheSize))
 #endif
 				;
 		}
 
 
-		void ConfigureTelemetry()
+		private void ConfigureTelemetry()
 		{
 			// TODO: enable after token validation has been made async
 			//if (
@@ -191,7 +271,7 @@ namespace Mapbox.Unity
 			try
 			{
 				_telemetryLibrary = TelemetryFactory.GetTelemetryInstance();
-				_telemetryLibrary.Initialize(_configuration.AccessToken);
+				_telemetryLibrary.Initialize(Configuration.AccessToken);
 				_telemetryLibrary.SetLocationCollectionState(GetTelemetryCollectionState());
 				_telemetryLibrary.SendTurnstile();
 			}
@@ -203,123 +283,20 @@ namespace Mapbox.Unity
 
 		public void SetLocationCollectionState(bool enable)
 		{
-			PlayerPrefs.SetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY, (enable ? 1 : 0));
+			PlayerPrefs.SetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY, enable ? 1 : 0);
 			PlayerPrefs.Save();
 			_telemetryLibrary.SetLocationCollectionState(enable);
 		}
 
-		bool GetTelemetryCollectionState()
+		private bool GetTelemetryCollectionState()
 		{
 			if (!PlayerPrefs.HasKey(Constants.Path.SHOULD_COLLECT_LOCATION_KEY))
-			{
 				PlayerPrefs.SetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY, 1);
-			}
 			return PlayerPrefs.GetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY) != 0;
 		}
 
-		/// <summary>
-		/// Makes an asynchronous url query.
-		/// </summary>
-		/// <returns>The request.</returns>
-		/// <param name="url">URL.</param>
-		/// <param name="callback">Callback.</param>
-		public IAsyncRequest Request(
-			string url
-			, Action<Response> callback
-			, int timeout = 10
-			, CanonicalTileId tileId = new CanonicalTileId()
-			, string tilesetId = null
-		)
-		{
-			return _fileSource.Request(url, callback, _configuration.DefaultTimeout, tileId, tilesetId);
-		}
 
-
-		Geocoder _geocoder;
-		/// <summary>
-		/// Lazy geocoder.
-		/// </summary>
-		public Geocoder Geocoder
-		{
-			get
-			{
-				if (_geocoder == null)
-				{
-					_geocoder = new Geocoder(new FileSource(Instance.Configuration.GetMapsSkuToken, _configuration.AccessToken));
-				}
-				return _geocoder;
-			}
-		}
-
-
-		Directions _directions;
-		/// <summary>
-		/// Lazy Directions.
-		/// </summary>
-		public Directions Directions
-		{
-			get
-			{
-				if (_directions == null)
-				{
-					_directions = new Directions(new FileSource(Instance.Configuration.GetMapsSkuToken, _configuration.AccessToken));
-				}
-				return _directions;
-			}
-		}
-
-		MapMatcher _mapMatcher;
-		/// <summary>
-		/// Lazy Map Matcher.
-		/// </summary>
-		public MapMatcher MapMatcher
-		{
-			get
-			{
-				if (_mapMatcher == null)
-				{
-					_mapMatcher = new MapMatcher(new FileSource(Instance.Configuration.GetMapsSkuToken, _configuration.AccessToken), _configuration.DefaultTimeout);
-				}
-				return _mapMatcher;
-			}
-		}
-
-
-		MapboxTokenApi _tokenValidator;
-		/// <summary>
-		/// Lazy token validator.
-		/// </summary>
-		public MapboxTokenApi TokenValidator
-		{
-			get
-			{
-				if (_tokenValidator == null)
-				{
-					_tokenValidator = new MapboxTokenApi();
-				}
-				return _tokenValidator;
-			}
-		}
-
-
-		TileJSON _tileJson;
-		/// <summary>
-		/// Lazy TileJSON wrapper: https://www.mapbox.com/api-documentation/maps/#retrieve-tilejson-metadata
-		/// </summary>
-		public TileJSON TileJSON
-		{
-			get
-			{
-				if (_tileJson == null)
-				{
-					_tileJson = new TileJSON(new FileSource(Instance.Configuration.GetMapsSkuToken, _configuration.AccessToken), _configuration.DefaultTimeout);
-				}
-				return _tileJson;
-			}
-		}
-
-
-		class InvalidTokenException : Exception
+		private class InvalidTokenException : Exception
 		{
 			public InvalidTokenException(string message) : base(message)
 			{
@@ -329,13 +306,12 @@ namespace Mapbox.Unity
 
 	public class MapboxConfiguration
 	{
-		[NonSerialized] private MapboxAccounts mapboxAccounts = new MapboxAccounts();
-
 		public string AccessToken;
-		public uint MemoryCacheSize = 500;
-		public uint FileCacheSize = 2500;
-		public int DefaultTimeout = 30;
 		public bool AutoRefreshCache = false;
+		public int DefaultTimeout = 30;
+		public uint FileCacheSize = 2500;
+		[NonSerialized] private readonly MapboxAccounts mapboxAccounts = new();
+		public uint MemoryCacheSize = 500;
 
 		public string GetMapsSkuToken()
 		{

@@ -1,20 +1,17 @@
+using System.Collections.Generic;
+using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
+
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	using Mapbox.Unity.MeshGeneration.Data;
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Components;
-	using System.Collections.Generic;
-	using System;
-	using Mapbox.Unity.Map;
-
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Collider Modifier")]
 	public class ColliderModifier : GameObjectModifier
 	{
+		[SerializeField] private ColliderOptions _options;
+
 		//[SerializeField]
 		private IColliderStrategy _colliderStrategy;
-
-		[SerializeField]
-		ColliderOptions _options;
 
 
 		public override void SetProperties(ModifierProperties properties)
@@ -57,10 +54,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		{
 			// if collider exists. remove it.
 			RemoveColliderFrom(ve);
-			if (_colliderStrategy != null)
-			{
-				_colliderStrategy.AddColliderTo(ve);
-			}
+			if (_colliderStrategy != null) _colliderStrategy.AddColliderTo(ve);
 		}
 
 		public void RemoveColliderFrom(VectorEntity ve)
@@ -69,16 +63,13 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			if (existingCollider != null)
 			{
 				DestroyImmediate(existingCollider);
-				if (_colliderStrategy != null)
-				{
-					_colliderStrategy.Reset();
-				}
+				if (_colliderStrategy != null) _colliderStrategy.Reset();
 			}
 		}
 
 		public class BoxColliderStrategy : IColliderStrategy
 		{
-			private Dictionary<GameObject, BoxCollider> _colliders;
+			private readonly Dictionary<GameObject, BoxCollider> _colliders;
 
 			public BoxColliderStrategy()
 			{
@@ -97,18 +88,16 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					_colliders.Add(ve.GameObject, ve.GameObject.AddComponent<BoxCollider>());
 				}
 			}
+
 			public void Reset()
 			{
-				if (_colliders != null)
-				{
-					_colliders.Clear();
-				}
+				if (_colliders != null) _colliders.Clear();
 			}
 		}
 
 		public class MeshColliderStrategy : IColliderStrategy
 		{
-			private Dictionary<GameObject, MeshCollider> _colliders;
+			private readonly Dictionary<GameObject, MeshCollider> _colliders;
 
 			public MeshColliderStrategy()
 			{
@@ -118,26 +107,20 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			public void AddColliderTo(VectorEntity ve)
 			{
 				if (_colliders.ContainsKey(ve.GameObject))
-				{
 					_colliders[ve.GameObject].sharedMesh = ve.Mesh;
-				}
 				else
-				{
 					_colliders.Add(ve.GameObject, ve.GameObject.AddComponent<MeshCollider>());
-				}
 			}
+
 			public void Reset()
 			{
-				if (_colliders != null)
-				{
-					_colliders.Clear();
-				}
+				if (_colliders != null) _colliders.Clear();
 			}
 		}
 
 		public class SphereColliderStrategy : IColliderStrategy
 		{
-			private Dictionary<GameObject, SphereCollider> _colliders;
+			private readonly Dictionary<GameObject, SphereCollider> _colliders;
 
 			public SphereColliderStrategy()
 			{
@@ -159,10 +142,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 			public void Reset()
 			{
-				if (_colliders != null)
-				{
-					_colliders.Clear();
-				}
+				if (_colliders != null) _colliders.Clear();
 			}
 		}
 

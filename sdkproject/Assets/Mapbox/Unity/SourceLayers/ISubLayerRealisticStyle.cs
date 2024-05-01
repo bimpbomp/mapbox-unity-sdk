@@ -2,9 +2,5 @@
 {
 	public interface ISubLayerRealisticStyle : ISubLayerStyle
 	{
-
 	}
-
 }
-
-

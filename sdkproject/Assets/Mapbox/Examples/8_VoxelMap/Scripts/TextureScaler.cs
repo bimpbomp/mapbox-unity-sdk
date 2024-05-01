@@ -1,24 +1,13 @@
 ﻿// Author: Eric Haines (Eric5h5)
 // SOURCE: http://wiki.unity3d.com/index.php/TextureScale
 
+using System.Threading;
+using UnityEngine;
+
 namespace Mapbox.Examples.Voxels
 {
-    using System.Threading;
-    using UnityEngine;
-
 	public class TextureScale
 	{
-		public class ThreadData
-		{
-			public int start;
-			public int end;
-			public ThreadData(int s, int e)
-			{
-				start = s;
-				end = e;
-			}
-		}
-
 		private static Color[] texColors;
 		private static Color[] newColors;
 		private static int w;
@@ -47,10 +36,12 @@ namespace Mapbox.Examples.Voxels
 				ratioX = 1.0f / ((float)newWidth / (tex.width - 1));
 				ratioY = 1.0f / ((float)newHeight / (tex.height - 1));
 			}
-			else {
-				ratioX = ((float)tex.width) / newWidth;
-				ratioY = ((float)tex.height) / newHeight;
+			else
+			{
+				ratioX = (float)tex.width / newWidth;
+				ratioY = (float)tex.height / newHeight;
 			}
+
 			w = tex.width;
 			w2 = newWidth;
 #if WINDOWS_UWP
@@ -61,10 +52,7 @@ namespace Mapbox.Examples.Voxels
 			var slice = newHeight / cores;
 
 			finishCount = 0;
-			if (mutex == null)
-			{
-				mutex = new Mutex(false);
-			}
+			if (mutex == null) mutex = new Mutex(false);
 
 #if WINDOWS_UWP
 				ThreadData threadData = new ThreadData(0, newHeight);
@@ -79,40 +67,30 @@ namespace Mapbox.Examples.Voxels
 #else
 			if (cores > 1)
 			{
-				int i = 0;
+				var i = 0;
 				ThreadData threadData;
 				for (i = 0; i < cores - 1; i++)
 				{
 					threadData = new ThreadData(slice * i, slice * (i + 1));
-					ParameterizedThreadStart ts = useBilinear ? new ParameterizedThreadStart(BilinearScale) : new ParameterizedThreadStart(PointScale);
-					Thread thread = new Thread(ts);
+					var ts = useBilinear ? BilinearScale : new ParameterizedThreadStart(PointScale);
+					var thread = new Thread(ts);
 					thread.Start(threadData);
 				}
+
 				threadData = new ThreadData(slice * i, newHeight);
 				if (useBilinear)
-				{
 					BilinearScale(threadData);
-				}
 				else
-				{
 					PointScale(threadData);
-				}
-				while (finishCount < cores)
-				{
-					Thread.Sleep(1);
-				}
+				while (finishCount < cores) Thread.Sleep(1);
 			}
 			else
 			{
-				ThreadData threadData = new ThreadData(0, newHeight);
+				var threadData = new ThreadData(0, newHeight);
 				if (useBilinear)
-				{
 					BilinearScale(threadData);
-				}
 				else
-				{
 					PointScale(threadData);
-				}
 			}
 #endif
 
@@ -124,23 +102,24 @@ namespace Mapbox.Examples.Voxels
 			newColors = null;
 		}
 
-		public static void BilinearScale(System.Object obj)
+		public static void BilinearScale(object obj)
 		{
-			ThreadData threadData = (ThreadData)obj;
+			var threadData = (ThreadData)obj;
 			for (var y = threadData.start; y < threadData.end; y++)
 			{
-				int yFloor = (int)Mathf.Floor(y * ratioY);
+				var yFloor = (int)Mathf.Floor(y * ratioY);
 				var y1 = yFloor * w;
 				var y2 = (yFloor + 1) * w;
 				var yw = y * w2;
 
 				for (var x = 0; x < w2; x++)
 				{
-					int xFloor = (int)Mathf.Floor(x * ratioX);
+					var xFloor = (int)Mathf.Floor(x * ratioX);
 					var xLerp = x * ratioX - xFloor;
-					newColors[yw + x] = ColorLerpUnclamped(ColorLerpUnclamped(texColors[y1 + xFloor], texColors[y1 + xFloor + 1], xLerp),
-														   ColorLerpUnclamped(texColors[y2 + xFloor], texColors[y2 + xFloor + 1], xLerp),
-														   y * ratioY - yFloor);
+					newColors[yw + x] = ColorLerpUnclamped(
+						ColorLerpUnclamped(texColors[y1 + xFloor], texColors[y1 + xFloor + 1], xLerp),
+						ColorLerpUnclamped(texColors[y2 + xFloor], texColors[y2 + xFloor + 1], xLerp),
+						y * ratioY - yFloor);
 				}
 			}
 
@@ -149,17 +128,14 @@ namespace Mapbox.Examples.Voxels
 			mutex.ReleaseMutex();
 		}
 
-		public static void PointScale(System.Object obj)
+		public static void PointScale(object obj)
 		{
-			ThreadData threadData = (ThreadData)obj;
+			var threadData = (ThreadData)obj;
 			for (var y = threadData.start; y < threadData.end; y++)
 			{
 				var thisY = (int)(ratioY * y) * w;
 				var yw = y * w2;
-				for (var x = 0; x < w2; x++)
-				{
-					newColors[yw + x] = texColors[(int)(thisY + ratioX * x)];
-				}
+				for (var x = 0; x < w2; x++) newColors[yw + x] = texColors[(int)(thisY + ratioX * x)];
 			}
 
 			mutex.WaitOne();
@@ -170,9 +146,21 @@ namespace Mapbox.Examples.Voxels
 		private static Color ColorLerpUnclamped(Color c1, Color c2, float value)
 		{
 			return new Color(c1.r + (c2.r - c1.r) * value,
-						  c1.g + (c2.g - c1.g) * value,
-						  c1.b + (c2.b - c1.b) * value,
-						  c1.a + (c2.a - c1.a) * value);
+				c1.g + (c2.g - c1.g) * value,
+				c1.b + (c2.b - c1.b) * value,
+				c1.a + (c2.a - c1.a) * value);
+		}
+
+		public class ThreadData
+		{
+			public int end;
+			public int start;
+
+			public ThreadData(int s, int e)
+			{
+				start = s;
+				end = e;
+			}
 		}
 	}
 }

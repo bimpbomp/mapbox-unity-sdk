@@ -1,21 +1,17 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
-	using Mapbox.VectorTile.ExtensionMethods;
+﻿using Mapbox.Unity.Map;
+using Mapbox.VectorTile.ExtensionMethods;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(ImageryLayerProperties))]
 	public class ImageryLayerPropertiesDrawer : PropertyDrawer
 	{
-		GUIContent[] sourceTypeContent;
-		bool isGUIContentSet = false;
+		private readonly GUIContent _tilesetIdGui = new() { text = "Tileset Id", tooltip = "Id of the tileset." };
 
-		private GUIContent _tilesetIdGui = new GUIContent
-		{
-			text = "Tileset Id",
-			tooltip = "Id of the tileset."
-		};
+		private bool isGUIContentSet;
+		private GUIContent[] sourceTypeContent;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -23,18 +19,15 @@
 			var sourceTypeValue = (ImagerySourceType)sourceTypeProperty.enumValueIndex;
 
 			var displayNames = sourceTypeProperty.enumDisplayNames;
-			int count = sourceTypeProperty.enumDisplayNames.Length;
+			var count = sourceTypeProperty.enumDisplayNames.Length;
 			if (!isGUIContentSet)
 			{
 				sourceTypeContent = new GUIContent[count];
-				for (int extIdx = 0; extIdx < count; extIdx++)
-				{
+				for (var extIdx = 0; extIdx < count; extIdx++)
 					sourceTypeContent[extIdx] = new GUIContent
 					{
-						text = displayNames[extIdx],
-						tooltip = EnumExtensions.Description((ImagerySourceType)extIdx),
+						text = displayNames[extIdx], tooltip = ((ImagerySourceType)extIdx).Description()
 					};
-				}
 				isGUIContentSet = true;
 			}
 
@@ -42,11 +35,9 @@
 			var sourceTypeLabel = new GUIContent { text = "Data Source", tooltip = "Source tileset for Imagery." };
 
 			EditorGUI.BeginChangeCheck();
-			sourceTypeProperty.enumValueIndex = EditorGUILayout.Popup(sourceTypeLabel, sourceTypeProperty.enumValueIndex, sourceTypeContent);
-			if(EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			sourceTypeProperty.enumValueIndex =
+				EditorGUILayout.Popup(sourceTypeLabel, sourceTypeProperty.enumValueIndex, sourceTypeContent);
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 			sourceTypeValue = (ImagerySourceType)sourceTypeProperty.enumValueIndex;
 
 			var sourceOptionsProperty = property.FindPropertyRelative("sourceOptions");
@@ -70,27 +61,20 @@
 					GUI.enabled = true;
 					break;
 				case ImagerySourceType.Custom:
-					EditorGUILayout.PropertyField(sourceOptionsProperty, new GUIContent { text = "Tileset Id / Style URL", tooltip = _tilesetIdGui.tooltip });
+					EditorGUILayout.PropertyField(sourceOptionsProperty,
+						new GUIContent { text = "Tileset Id / Style URL", tooltip = _tilesetIdGui.tooltip });
 					break;
 				case ImagerySourceType.None:
 					break;
-				default:
-					break;
 			}
 
-			if (EditorGUI.EndChangeCheck())
-			{
-				EditorHelper.CheckForModifiedProperty(property);
-			}
+			if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 
 			if (sourceTypeValue != ImagerySourceType.None)
 			{
 				EditorGUI.BeginChangeCheck();
 				EditorGUILayout.PropertyField(property.FindPropertyRelative("rasterOptions"));
-				if (EditorGUI.EndChangeCheck())
-				{
-					EditorHelper.CheckForModifiedProperty(property);
-				}
+				if (EditorGUI.EndChangeCheck()) EditorHelper.CheckForModifiedProperty(property);
 			}
 		}
 	}

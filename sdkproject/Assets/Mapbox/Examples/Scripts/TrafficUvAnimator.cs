@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Mapbox.Examples
 {
@@ -10,20 +8,15 @@ namespace Mapbox.Examples
 		public float Speed;
 		private Vector2 _offset;
 
-		void Start()
+		private void Start()
 		{
-
 		}
 
-		void Update()
+		private void Update()
 		{
 			_offset.Set(_offset.x + Time.deltaTime * Speed, 0.2f);
 
-			foreach (var item in Materials)
-			{
-				item.SetTextureOffset("_MainTex", _offset);
-			}
+			foreach (var item in Materials) item.SetTextureOffset("_MainTex", _offset);
 		}
 	}
 }
-

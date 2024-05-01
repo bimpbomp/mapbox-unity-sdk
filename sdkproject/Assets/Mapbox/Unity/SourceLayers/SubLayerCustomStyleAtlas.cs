@@ -1,21 +1,20 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
+﻿using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	public class SubLayerCustomStyleAtlas : ISubLayerCustomStyleAtlas
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerCustomStyleAtlas(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
 		}
+
 		public Material TopMaterial
 		{
-			get
-			{
-				return _materialOptions.customStyleOptions.materials[0].Materials[0];
-			}
+			get => _materialOptions.customStyleOptions.materials[0].Materials[0];
 			set
 			{
 				if (_materialOptions.customStyleOptions.materials[0].Materials[0] != value)
@@ -25,12 +24,10 @@
 				}
 			}
 		}
+
 		public Material SideMaterial
 		{
-			get
-			{
-				return _materialOptions.customStyleOptions.materials[1].Materials[0];
-			}
+			get => _materialOptions.customStyleOptions.materials[1].Materials[0];
 			set
 			{
 				if (_materialOptions.customStyleOptions.materials[1].Materials[0] != value)
@@ -43,10 +40,7 @@
 
 		public AtlasInfo UvAtlas
 		{
-			get
-			{
-				return _materialOptions.customStyleOptions.atlasInfo;
-			}
+			get => _materialOptions.customStyleOptions.atlasInfo;
 
 			set
 			{
@@ -57,6 +51,7 @@
 				}
 			}
 		}
+
 		public void SetAsStyle(Material topMaterial, Material sideMaterial, AtlasInfo uvAtlas)
 		{
 			_materialOptions.customStyleOptions.texturingType = UvMapType.Atlas;
@@ -72,7 +67,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

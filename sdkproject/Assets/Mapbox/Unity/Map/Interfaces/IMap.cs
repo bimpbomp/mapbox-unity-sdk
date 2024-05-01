@@ -6,27 +6,33 @@ using UnityEngine;
 
 namespace Mapbox.Unity.Map.Interfaces
 {
-	public interface IMap : IMapReadable, IMapWritable, IUnifiedMap { }
+	public interface IMap : IMapReadable, IMapWritable, IUnifiedMap
+	{
+	}
 
 	public interface IMapReadable
 	{
 		Vector2d CenterMercator { get; }
 		float WorldRelativeScale { get; }
 		Vector2d CenterLatitudeLongitude { get; }
+
 		/// <summary>
-		/// Gets the zoom value of the map.
-		/// This allows for zoom values in between actual zoom level "AbsoluteZoom" requested from the service.
+		///     Gets the zoom value of the map.
+		///     This allows for zoom values in between actual zoom level "AbsoluteZoom" requested from the service.
 		/// </summary>
 		float Zoom { get; }
+
 		/// <summary>
-		/// Gets the zoom value at which the map was intialized.
+		///     Gets the zoom value at which the map was intialized.
 		/// </summary>
 		int InitialZoom { get; }
+
 		/// <summary>
-		/// Gets the zoom value at which the tiles will be requested from the service.
-		/// Use this only for calls which require an integer value of zoom to be passed in.
+		///     Gets the zoom value at which the tiles will be requested from the service.
+		///     Use this only for calls which require an integer value of zoom to be passed in.
 		/// </summary>
 		int AbsoluteZoom { get; }
+
 		Transform Root { get; }
 		float UnityTileSize { get; }
 		Texture2D LoadingTexture { get; }

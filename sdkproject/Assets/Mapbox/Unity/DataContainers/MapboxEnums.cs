@@ -1,7 +1,7 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System.ComponentModel;
+﻿using System.ComponentModel;
 
+namespace Mapbox.Unity.Map
+{
 	// Map related enums
 	public enum MapPresetType
 	{
@@ -20,7 +20,7 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Map with imagery and terrain and vector data, used for world scale AR scenario.")]
 #endif
-		ARWorldScale,
+		ARWorldScale
 	}
 
 	public enum MapPlacementType
@@ -71,12 +71,12 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Map extent defined by custom tile provider.")]
 #endif
-		Custom,
+		Custom
 	}
 
 	public enum MapCoordinateSystemType
 	{
-		WebMercator,
+		WebMercator
 	}
 
 	//Layer related enums.
@@ -106,35 +106,42 @@
 #endif
 		Atlas = 2,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Use an image texture atlas and a color pallete to define textures for roof & sides of buildings.")]
+		[Description(
+			"Use an image texture atlas and a color pallete to define textures for roof & sides of buildings.")]
 #endif
-		AtlasWithColorPalette = 3,
+		AtlasWithColorPalette = 3
 	}
 
 	public enum ImagerySourceType
 	{
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Streets is a comprehensive, general-purpose map that emphasizes accurate, legible styling of road and transit networks")]
+		[Description(
+			"Mapbox Streets is a comprehensive, general-purpose map that emphasizes accurate, legible styling of road and transit networks")]
 #endif
 		MapboxStreets,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Outdoors is a general-purpose map with curated tilesets and specialized styling tailored to hiking, biking, and the most adventurous use cases.")]
+		[Description(
+			"Mapbox Outdoors is a general-purpose map with curated tilesets and specialized styling tailored to hiking, biking, and the most adventurous use cases.")]
 #endif
 		MapboxOutdoors,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Light and Mapbox Dark are subtle, full-featured maps designed to provide geographic context while highlighting the data on your analytics dashboard, data visualization, or data overlay.")]
+		[Description(
+			"Mapbox Light and Mapbox Dark are subtle, full-featured maps designed to provide geographic context while highlighting the data on your analytics dashboard, data visualization, or data overlay.")]
 #endif
 		MapboxDark,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Light and Mapbox Dark are subtle, full-featured maps designed to provide geographic context while highlighting the data on your analytics dashboard, data visualization, or data overlay.")]
+		[Description(
+			"Mapbox Light and Mapbox Dark are subtle, full-featured maps designed to provide geographic context while highlighting the data on your analytics dashboard, data visualization, or data overlay.")]
 #endif
 		MapboxLight,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Satellite is our full global base map that is perfect as a blank canvas or an overlay for your own data.")]
+		[Description(
+			"Mapbox Satellite is our full global base map that is perfect as a blank canvas or an overlay for your own data.")]
 #endif
 		MapboxSatellite,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Satellite Streets combines our Mapbox Satellite with vector data from Mapbox Streets. The comprehensive set of road, label, and POI information brings clarity and context to the crisp detail in our high-resolution satellite imagery.")]
+		[Description(
+			"Mapbox Satellite Streets combines our Mapbox Satellite with vector data from Mapbox Streets. The comprehensive set of road, label, and POI information brings clarity and context to the crisp detail in our high-resolution satellite imagery.")]
 #endif
 		MapboxSatelliteStreet,
 #if !ENABLE_WINMD_SUPPORT
@@ -166,19 +173,23 @@
 	public enum VectorSourceType
 	{
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Streets along with unique identifiers for building features. Combines building footprints that may be in different tiles.")]
+		[Description(
+			"Mapbox Streets along with unique identifiers for building features. Combines building footprints that may be in different tiles.")]
 #endif
 		MapboxStreetsWithBuildingIds = 0,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
+		[Description(
+			"Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
 #endif
 		MapboxStreets = 1,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
+		[Description(
+			"Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
 #endif
 		MapboxStreetsV8WithBuildingIds = -1,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
+		[Description(
+			"Mapbox Streets vector tiles are largely based on data from OpenStreetMap, a free & global source of geographic data built by volunteers.")]
 #endif
 		MapboxStreetsV8 = -2,
 #if !ENABLE_WINMD_SUPPORT
@@ -190,6 +201,7 @@
 #endif
 		None = 3
 	}
+
 	public enum ElevationLayerType
 	{
 #if !ENABLE_WINMD_SUPPORT
@@ -233,23 +245,24 @@
 #endif
 		PropertyHeight,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Extrude features using the property value. Sets height based on property's minimum height, if height isn't uniform. Results in flat tops.")]
+		[Description(
+			"Extrude features using the property value. Sets height based on property's minimum height, if height isn't uniform. Results in flat tops.")]
 #endif
 		MinHeight,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Extrude features using the property value. Sets height based on property's maximum height, if height isn't uniform. Results in flat tops.")]
+		[Description(
+			"Extrude features using the property value. Sets height based on property's maximum height, if height isn't uniform. Results in flat tops.")]
 #endif
 		MaxHeight,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Extrude features using the property value. Values are clamped in to min and max values if they are lower or greater than min,max values respectively.")]
+		[Description(
+			"Extrude features using the property value. Values are clamped in to min and max values if they are lower or greater than min,max values respectively.")]
 #endif
 		RangeHeight,
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Extrude all features using the fixed value.")]
 #endif
-		AbsoluteHeight,
-
-
+		AbsoluteHeight
 	}
 
 	public enum ExtrusionGeometryType
@@ -265,7 +278,7 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Extrudes only side wall geometry of the vector feature.")]
 #endif
-		SideOnly,
+		SideOnly
 	}
 
 	public enum ColliderType
@@ -285,7 +298,7 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Sphere collider added to the GameObject.")]
 #endif
-		SphereCollider,
+		SphereCollider
 	}
 
 	public enum MapFeatureType
@@ -301,8 +314,8 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Parkland Layer.")]
 #endif
-		Parkland,
-	};
+		Parkland
+	}
 
 	public enum StyleTypes
 	{
@@ -311,7 +324,8 @@
 #endif
 		Custom,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Simple style combines stylized vector designs with scriptable palettes to create a simple, procedurally colored rendering style.")]
+		[Description(
+			"Simple style combines stylized vector designs with scriptable palettes to create a simple, procedurally colored rendering style.")]
 #endif
 		Simple,
 #if !ENABLE_WINMD_SUPPORT
@@ -323,21 +337,24 @@
 #endif
 		Dark,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Realistic style combines modern, urban designs with physically based rendering materials to help create a contemporary, realistic rendering style.")]
+		[Description(
+			"Realistic style combines modern, urban designs with physically based rendering materials to help create a contemporary, realistic rendering style.")]
 #endif
 		Realistic,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Fantasy style combines old world medieval designs with physically based rendering materials to help create a fantasy rendering style.")]
+		[Description(
+			"Fantasy style combines old world medieval designs with physically based rendering materials to help create a fantasy rendering style.")]
 #endif
 		Fantasy,
 #if !ENABLE_WINMD_SUPPORT
-		[Description("Satellite style uses high-resolution satellite imagery as a texture set. The comprehensive set of road, label, and POI information brings clarity and context to the crisp detail in our high-resolution satellite imagery.")]
+		[Description(
+			"Satellite style uses high-resolution satellite imagery as a texture set. The comprehensive set of road, label, and POI information brings clarity and context to the crisp detail in our high-resolution satellite imagery.")]
 #endif
 		Satellite,
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Color style uses user-defined color and opacity to create colorful, flat shading for your map.")]
 #endif
-		Color,
+		Color
 	}
 
 	public enum SamplePalettes
@@ -362,7 +379,7 @@
 #if !ENABLE_WINMD_SUPPORT
 		[Description("Display points of interest at specific address or geographical co-ordinates on the map")]
 #endif
-		AddressOrLatLon,
+		AddressOrLatLon
 	}
 
 	public enum LocationPrefabCategories
@@ -418,5 +435,4 @@
 		Round = 1,
 		Square = 4
 	}
-
 }

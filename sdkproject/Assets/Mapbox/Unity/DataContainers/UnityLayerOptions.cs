@@ -1,17 +1,17 @@
-﻿using Mapbox.Unity.MeshGeneration.Data;
+﻿using System;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
 namespace Mapbox.Unity.Map
 {
-	using System;
-	using UnityEngine;
-
 	[Serializable]
 	public class UnityLayerOptions : MapboxDataProperty
 	{
 		[Tooltip("Add terrain tiles to Unity Layer")]
-		public bool addToLayer = false;
+		public bool addToLayer;
+
 		[Tooltip("Unity Layer id to which terrain tiles will get added.")]
-		public int layerId = 0;
+		public int layerId;
 
 		public override void UpdateProperty(UnityTile tile)
 		{

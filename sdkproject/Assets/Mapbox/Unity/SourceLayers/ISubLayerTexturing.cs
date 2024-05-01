@@ -13,18 +13,15 @@
 		ISubLayerCustomStyle CustomStyle { get; }
 
 		/// <summary>
-		/// Sets the type of the style.
+		///     Sets the type of the style.
 		/// </summary>
 		/// <param name="styleType">Style type.</param>
 		void SetStyleType(StyleTypes styleType);
 
 		/// <summary>
-		/// Gets the type of style used in the layer.
+		///     Gets the type of style used in the layer.
 		/// </summary>
 		/// <returns>The style type.</returns>
 		StyleTypes GetStyleType();
 	}
-
 }
-
-

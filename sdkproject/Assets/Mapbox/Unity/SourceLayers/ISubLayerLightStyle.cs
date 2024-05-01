@@ -5,7 +5,4 @@
 		float Opacity { get; set; }
 		void SetAsStyle(float opacity);
 	}
-
 }
-
-

@@ -1,14 +1,14 @@
-﻿namespace Mapbox.Editor
-{
-	using Mapbox.Unity.MeshGeneration.Modifiers;
-	using UnityEditor;
-	using UnityEngine;
+﻿using Mapbox.Unity.MeshGeneration.Modifiers;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(AddMonoBehavioursModifierType))]
-	class AddMonoBehavioursModifierDrawer : PropertyDrawer
+	internal class AddMonoBehavioursModifierDrawer : PropertyDrawer
 	{
-		const int _offset = 40;
-		MonoScript _monoscript;
+		private const int _offset = 40;
+		private MonoScript _monoscript;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -41,9 +41,7 @@
 			}
 
 			if (monoscriptProperty.objectReferenceValue == null)
-			{
 				EditorGUI.HelpBox(helpRect, "Selected object is not a MonoBehaviour!", MessageType.Error);
-			}
 
 			EditorGUI.EndProperty();
 		}

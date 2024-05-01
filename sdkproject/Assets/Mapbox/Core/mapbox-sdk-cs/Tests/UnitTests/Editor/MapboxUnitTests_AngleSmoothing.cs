@@ -1,22 +1,17 @@
+using Mapbox.Unity.Location;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-
-	using NUnit.Framework;
-	using Mapbox.Unity.Location;
-
-
 	[TestFixture]
 	internal class AngleSmoothingTest
 	{
-
-
 		[Test]
 		public void NoOp()
 		{
 			//NoOp does nothing. should always return latest value
-			AngleSmoothingNoOp noop = new AngleSmoothingNoOp();
-			string opName = noop.GetType().Name + " ";
+			var noop = new AngleSmoothingNoOp();
+			var opName = noop.GetType().Name + " ";
 			noop.Add(23);
 			Assert.AreEqual(23d, noop.Calculate(), opName + "did modify data");
 			noop.Add(29);
@@ -32,8 +27,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public void Average()
 		{
 			// simple average
-			AngleSmoothingAverage avg = new AngleSmoothingAverage();
-			string opName = avg.GetType().Name + " ";
+			var avg = new AngleSmoothingAverage();
+			var opName = avg.GetType().Name + " ";
 			avg.Add(355);
 			avg.Add(15);
 			Assert.AreEqual(5d, avg.Calculate(), opName + "did not properly calculate across 0");
@@ -56,8 +51,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		{
 			//simple low pass filter
 			// parameter 1.0 => no smoothing: despite calucations going on last value should be returned
-			AngleSmoothingLowPass lp = new AngleSmoothingLowPass(1.0d);
-			string opName = lp.GetType().Name + " ";
+			var lp = new AngleSmoothingLowPass(1.0d);
+			var opName = lp.GetType().Name + " ";
 			lp.Add(45);
 			lp.Add(90);
 			lp.Add(135);
@@ -99,8 +94,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		{
 			// exponential moving average
 			// parameter 1.0 => no smoothing
-			AngleSmoothingEMA ema = new AngleSmoothingEMA();
-			string opName = ema.GetType().Name + " ";
+			var ema = new AngleSmoothingEMA();
+			var opName = ema.GetType().Name + " ";
 			ema.Add(45);
 			ema.Add(90);
 			ema.Add(135);
@@ -124,9 +119,5 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			ema.Add(330);
 			Assert.AreEqual(350.43d, ema.Calculate(), opName + "didn't smooth as expected back across 0");
 		}
-
-
-
-
 	}
 }

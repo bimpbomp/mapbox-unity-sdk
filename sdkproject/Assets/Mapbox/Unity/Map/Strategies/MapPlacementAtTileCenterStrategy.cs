@@ -8,7 +8,8 @@ namespace Mapbox.Unity.Map.Strategies
 	{
 		public void SetUpPlacement(AbstractMap map)
 		{
-			var referenceTileRect = Conversions.TileBounds(TileCover.CoordinateToTileId(map.CenterLatitudeLongitude, map.AbsoluteZoom));
+			var referenceTileRect =
+				Conversions.TileBounds(TileCover.CoordinateToTileId(map.CenterLatitudeLongitude, map.AbsoluteZoom));
 			map.SetCenterMercator(referenceTileRect.Center);
 		}
 	}

@@ -8,7 +8,8 @@ namespace Mapbox.Unity.Map.Strategies
 	{
 		public void SetUpScaling(AbstractMap map)
 		{
-			var referenceTileRect = Conversions.TileBounds(TileCover.CoordinateToTileId(map.CenterLatitudeLongitude, map.AbsoluteZoom));
+			var referenceTileRect =
+				Conversions.TileBounds(TileCover.CoordinateToTileId(map.CenterLatitudeLongitude, map.AbsoluteZoom));
 			map.SetWorldRelativeScale((float)(map.Options.scalingOptions.unityTileSize / referenceTileRect.Size.x));
 		}
 	}

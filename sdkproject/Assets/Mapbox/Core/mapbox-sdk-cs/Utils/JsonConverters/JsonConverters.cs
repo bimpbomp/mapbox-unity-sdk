@@ -4,33 +4,28 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Json;
+
 namespace Mapbox.Utils.JsonConverters
 {
-	using Mapbox.Json;
-
 	/// <summary>
-	/// Custom json converters.
+	///     Custom json converters.
 	/// </summary>
 	public static class JsonConverters
 	{
 		/// <summary>
-		/// Array of converters.
+		///     Array of converters.
 		/// </summary>
-		private static JsonConverter[] converters =
+		private static readonly JsonConverter[] converters =
 		{
-			new LonLatToVector2dConverter(),
-			new BboxToVector2dBoundsConverter(),
+			new LonLatToVector2dConverter(), new BboxToVector2dBoundsConverter(),
 			new PolylineToVector2dListConverter()
 		};
 
 		/// <summary>
-		/// Gets the converters.
+		///     Gets the converters.
 		/// </summary>
 		/// <value>The converters.</value>
-		public static JsonConverter[] Converters {
-			get {
-				return converters;
-			}
-		}
+		public static JsonConverter[] Converters => Converters;
 	}
 }

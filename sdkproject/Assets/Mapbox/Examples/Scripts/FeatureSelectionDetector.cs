@@ -1,12 +1,12 @@
-﻿namespace Mapbox.Examples
-{
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
+﻿using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	public class FeatureSelectionDetector : MonoBehaviour
 	{
-		private FeatureUiMarker _marker;
 		private VectorEntity _feature;
+		private FeatureUiMarker _marker;
 
 		public void OnMouseUpAsButton()
 		{

@@ -1,15 +1,15 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using Mapbox.Unity.MeshGeneration.Modifiers;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomEditor(typeof(MaterialModifier))]
 	public class MaterialModifierEditor : UnityEditor.Editor
 	{
+		private SerializedProperty _materials;
 
 		private MonoScript script;
-		private SerializedProperty _materials;
 
 		private void OnEnable()
 		{

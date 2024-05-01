@@ -1,23 +1,22 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System;
-	using UnityEngine;
+﻿using System;
+using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	[Serializable]
 	public class RangeTileProviderOptions : ExtentOptions
 	{
-		[Range(0, 10)]
-		public int west = 1;
-		[Range(0, 10)]
-		public int north = 1;
-		[Range(0, 10)]
-		public int east = 1;
-		[Range(0, 10)]
-		public int south = 1;
+		[Range(0, 10)] public int west = 1;
+
+		[Range(0, 10)] public int north = 1;
+
+		[Range(0, 10)] public int east = 1;
+
+		[Range(0, 10)] public int south = 1;
 
 		public override void SetOptions(ExtentOptions extentOptions)
 		{
-			RangeTileProviderOptions options = extentOptions as RangeTileProviderOptions;
+			var options = extentOptions as RangeTileProviderOptions;
 			if (options != null)
 			{
 				west = options.west;
@@ -27,7 +26,8 @@
 			}
 			else
 			{
-				Debug.LogError("ExtentOptions type mismatch : Using " + extentOptions.GetType() + " to set extent of type " + this.GetType());
+				Debug.LogError("ExtentOptions type mismatch : Using " + extentOptions.GetType() +
+				               " to set extent of type " + GetType());
 			}
 		}
 

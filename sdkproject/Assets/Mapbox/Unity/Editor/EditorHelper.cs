@@ -1,40 +1,36 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using System;
-	using System.Collections.Generic;
-	using System.Linq;
-	using System.Reflection;
-	using Mapbox.Unity.Map;
-	using Mapbox.Unity.MeshGeneration.Data;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEditor;
+using UnityEditor.Callbacks;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
+namespace Mapbox.Editor
+{
 	/// <summary>
-	/// EditorHelper class provides methods for working with serialzed properties.
-	/// Methods in this class are based on the spacepuppy-unity-framework, available at the url below.
-	/// https://github.com/lordofduct/spacepuppy-unity-framework/tree/d8d592e212b26cad53264421d22c3d26c6799923/SpacepuppyBaseEditor.
+	///     EditorHelper class provides methods for working with serialzed properties.
+	///     Methods in this class are based on the spacepuppy-unity-framework, available at the url below.
+	///     https://github.com/lordofduct/spacepuppy-unity-framework/tree/d8d592e212b26cad53264421d22c3d26c6799923/SpacepuppyBaseEditor.
 	/// </summary>
 	public static class EditorHelper
 	{
-
-		[UnityEditor.Callbacks.DidReloadScripts]
+		[DidReloadScripts]
 		private static void OnScriptsReloaded()
 		{
 			if (Application.isEditor)
 			{
-				AbstractMap abstractMap = UnityEngine.Object.FindObjectOfType<AbstractMap>();
+				var abstractMap = Object.FindObjectOfType<AbstractMap>();
 
-				if (abstractMap == null)
-				{
-					return;
-				}
+				if (abstractMap == null) return;
 
-				UnityTile[] unityTiles = abstractMap.GetComponentsInChildren<UnityTile>();
+				var unityTiles = abstractMap.GetComponentsInChildren<UnityTile>();
 
-				for (int i = 0; i < unityTiles.Length; i++)
-				{
-					UnityEngine.Object.DestroyImmediate(unityTiles[i].gameObject);
-				}
+				for (var i = 0; i < unityTiles.Length; i++) Object.DestroyImmediate(unityTiles[i].gameObject);
 
 				abstractMap.DestroyChildObjects();
 				if (EditorApplication.isPlaying)
@@ -42,29 +38,25 @@
 					abstractMap.ResetMap();
 					return;
 				}
-				if (abstractMap.IsEditorPreviewEnabled == true)
+
+				if (abstractMap.IsEditorPreviewEnabled)
 				{
-					if (EditorApplication.isPlayingOrWillChangePlaymode)
-					{
-						return;
-					}
-					else
-					{
-						abstractMap.DisableEditorPreview();
-						abstractMap.EnableEditorPreview();
-					}
+					if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+
+					abstractMap.DisableEditorPreview();
+					abstractMap.EnableEditorPreview();
 				}
 			}
 		}
 
 
-		public static void CheckForModifiedProperty<T>(SerializedProperty property, T targetObject, bool forceHasChanged = false)
+		public static void CheckForModifiedProperty<T>(SerializedProperty property, T targetObject,
+			bool forceHasChanged = false)
 		{
-			MapboxDataProperty targetObjectAsDataProperty = GetMapboxDataPropertyObject(targetObject);
+			var targetObjectAsDataProperty = GetMapboxDataPropertyObject(targetObject);
 			if (targetObjectAsDataProperty != null)
-			{
-				targetObjectAsDataProperty.HasChanged = forceHasChanged || property.serializedObject.ApplyModifiedProperties();
-			}
+				targetObjectAsDataProperty.HasChanged =
+					forceHasChanged || property.serializedObject.ApplyModifiedProperties();
 		}
 
 		public static void CheckForModifiedProperty(SerializedProperty property, bool forceHasChanged = false)
@@ -79,8 +71,8 @@
 
 		public static bool DidModifyProperty<T>(SerializedProperty property, T targetObject)
 		{
-			MapboxDataProperty targetObjectAsDataProperty = targetObject as MapboxDataProperty;
-			return (property.serializedObject.ApplyModifiedProperties() && targetObjectAsDataProperty != null);
+			var targetObjectAsDataProperty = targetObject as MapboxDataProperty;
+			return property.serializedObject.ApplyModifiedProperties() && targetObjectAsDataProperty != null;
 		}
 
 		public static bool DidModifyProperty(SerializedProperty property)
@@ -92,31 +84,22 @@
 		{
 			property = property.Copy();
 			var nextElement = property.Copy();
-			bool hasNextElement = nextElement.NextVisible(false);
-			if (!hasNextElement)
-			{
-				nextElement = null;
-			}
+			var hasNextElement = nextElement.NextVisible(false);
+			if (!hasNextElement) nextElement = null;
 
 			property.NextVisible(true);
 			while (true)
 			{
-				if ((SerializedProperty.EqualContents(property, nextElement)))
-				{
-					yield break;
-				}
+				if (SerializedProperty.EqualContents(property, nextElement)) yield break;
 
 				yield return property;
 
-				bool hasNext = property.NextVisible(false);
-				if (!hasNext)
-				{
-					break;
-				}
+				var hasNext = property.NextVisible(false);
+				if (!hasNext) break;
 			}
 		}
 
-		public static System.Type GetTargetType(this SerializedObject obj)
+		public static Type GetTargetType(this SerializedObject obj)
 		{
 			if (obj == null) return null;
 
@@ -125,15 +108,13 @@
 				var c = obj.targetObjects[0];
 				return c.GetType();
 			}
-			else
-			{
-				return obj.targetObject.GetType();
-			}
+
+			return obj.targetObject.GetType();
 		}
 
 
 		/// <summary>
-		/// Gets the object the property represents.
+		///     Gets the object the property represents.
 		/// </summary>
 		/// <param name="prop"></param>
 		/// <returns></returns>
@@ -143,18 +124,18 @@
 			object obj = prop.serializedObject.targetObject;
 			var elements = path.Split('.');
 			foreach (var element in elements)
-			{
 				if (element.Contains("["))
 				{
 					var elementName = element.Substring(0, element.IndexOf("[", StringComparison.CurrentCulture));
-					var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture)).Replace("[", "").Replace("]", ""));
+					var index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture))
+						.Replace("[", "").Replace("]", ""));
 					obj = GetValue_Imp(obj, elementName, index);
 				}
 				else
 				{
 					obj = GetValue_Imp(obj, element);
 				}
-			}
+
 			return obj;
 		}
 
@@ -164,20 +145,19 @@
 			object obj = prop.serializedObject.targetObject;
 			var elements = path.Split('.');
 			foreach (var element in elements.Take(elements.Length - 1))
-			{
 				if (element.Contains("["))
 				{
 					var elementName = element.Substring(0, element.IndexOf("[", StringComparison.CurrentCulture));
-					var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture)).Replace("[", "").Replace("]", ""));
+					var index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture))
+						.Replace("[", "").Replace("]", ""));
 					obj = GetValue_Imp(obj, elementName, index);
 				}
 				else
 				{
 					obj = GetValue_Imp(obj, element);
 				}
-			}
 
-			if (System.Object.ReferenceEquals(obj, null)) return;
+			if (ReferenceEquals(obj, null)) return;
 
 			try
 			{
@@ -187,31 +167,29 @@
 				{
 					var tp = obj.GetType();
 					var elementName = element.Substring(0, element.IndexOf("[", StringComparison.CurrentCulture));
-					var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture)).Replace("[", "").Replace("]", ""));
-					var field = tp.GetField(elementName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-					var arr = field.GetValue(obj) as System.Collections.IList;
+					var index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture))
+						.Replace("[", "").Replace("]", ""));
+					var field = tp.GetField(elementName,
+						BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+					var arr = field.GetValue(obj) as IList;
 					arr[index] = value;
 				}
 				else
 				{
 					var tp = obj.GetType();
-					var field = tp.GetField(element, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-					if (field != null)
-					{
-						field.SetValue(obj, value);
-					}
+					var field = tp.GetField(element,
+						BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+					if (field != null) field.SetValue(obj, value);
 				}
-
 			}
 			catch
 			{
-				return;
 			}
 		}
 
 
 		/// <summary>
-		/// Gets the object that the property is a member of
+		///     Gets the object that the property is a member of
 		/// </summary>
 		/// <param name="prop"></param>
 		/// <returns></returns>
@@ -221,18 +199,18 @@
 			object obj = prop.serializedObject.targetObject;
 			var elements = path.Split('.');
 			foreach (var element in elements.Take(elements.Length - 1))
-			{
 				if (element.Contains("["))
 				{
 					var elementName = element.Substring(0, element.IndexOf("[", StringComparison.CurrentCulture));
-					var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture)).Replace("[", "").Replace("]", ""));
+					var index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.CurrentCulture))
+						.Replace("[", "").Replace("]", ""));
 					obj = GetValue_Imp(obj, elementName, index);
 				}
 				else
 				{
 					obj = GetValue_Imp(obj, element);
 				}
-			}
+
 			return obj;
 		}
 
@@ -248,25 +226,26 @@
 				if (f != null)
 					return f.GetValue(source);
 
-				var p = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+				var p = type.GetProperty(name,
+					BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 				if (p != null)
 					return p.GetValue(source, null);
 
 				type = type.BaseType;
 			}
+
 			return null;
 		}
 
 		private static object GetValue_Imp(object source, string name, int index)
 		{
-			var enumerable = GetValue_Imp(source, name) as System.Collections.IEnumerable;
+			var enumerable = GetValue_Imp(source, name) as IEnumerable;
 			if (enumerable == null) return null;
 			var enm = enumerable.GetEnumerator();
 
-			for (int i = 0; i <= index; i++)
-			{
-				if (!enm.MoveNext()) return null;
-			}
+			for (var i = 0; i <= index; i++)
+				if (!enm.MoveNext())
+					return null;
 			return enm.Current;
 		}
 
@@ -274,7 +253,7 @@
 		{
 			var pstart = property.Copy();
 			var pend = property.GetEndProperty();
-			int cnt = 0;
+			var cnt = 0;
 
 			pstart.Next(true);
 			while (!SerializedProperty.EqualContents(pstart, pend))

@@ -1,53 +1,20 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
+﻿using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	public class SubLayerCustomStyleAtlasWithColorPallete : ISubLayerCustomStyleAtlasWithColorPallete
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerCustomStyleAtlasWithColorPallete(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
 		}
 
-		public Material TopMaterial
-		{
-			get
-			{
-				return _materialOptions.materials[0].Materials[0];
-			}
-			set
-			{
-				if (_materialOptions.materials[0].Materials[0] != value)
-				{
-					_materialOptions.materials[0].Materials[0] = value;
-					_materialOptions.HasChanged = true;
-				}
-			}
-		}
-		public Material SideMaterial
-		{
-			get
-			{
-				return _materialOptions.materials[1].Materials[0];
-			}
-			set
-			{
-				if (_materialOptions.materials[1].Materials[0] != value)
-				{
-					_materialOptions.materials[1].Materials[0] = value;
-					_materialOptions.HasChanged = true;
-				}
-			}
-		}
-
 		public AtlasInfo UvAtlas
 		{
-			get
-			{
-				return _materialOptions.atlasInfo;
-			}
+			get => _materialOptions.atlasInfo;
 
 			set
 			{
@@ -59,12 +26,35 @@
 			}
 		}
 
+		public Material TopMaterial
+		{
+			get => _materialOptions.materials[0].Materials[0];
+			set
+			{
+				if (_materialOptions.materials[0].Materials[0] != value)
+				{
+					_materialOptions.materials[0].Materials[0] = value;
+					_materialOptions.HasChanged = true;
+				}
+			}
+		}
+
+		public Material SideMaterial
+		{
+			get => _materialOptions.materials[1].Materials[0];
+			set
+			{
+				if (_materialOptions.materials[1].Materials[0] != value)
+				{
+					_materialOptions.materials[1].Materials[0] = value;
+					_materialOptions.HasChanged = true;
+				}
+			}
+		}
+
 		public ScriptablePalette ColorPalette
 		{
-			get
-			{
-				return _materialOptions.colorPalette;
-			}
+			get => _materialOptions.colorPalette;
 
 			set
 			{
@@ -76,7 +66,8 @@
 			}
 		}
 
-		public void SetAsStyle(Material topMaterial, Material sideMaterial, AtlasInfo uvAtlas, ScriptablePalette palette)
+		public void SetAsStyle(Material topMaterial, Material sideMaterial, AtlasInfo uvAtlas,
+			ScriptablePalette palette)
 		{
 			_materialOptions.texturingType = UvMapType.Atlas;
 			_materialOptions.materials[0].Materials[0] = topMaterial;
@@ -92,7 +83,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

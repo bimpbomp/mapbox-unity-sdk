@@ -1,47 +1,27 @@
+using System.Collections.Generic;
+using Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers;
 using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	using System.Collections.Generic;
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers;
-	using System;
-
 	/// <summary>
-	/// Polygon modifier creates the polygon (vertex&triangles) using the original vertex list.
-	/// Currently uses Triangle.Net for triangulation, which occasionally adds extra vertices to maintain a good triangulation so output vertex list might not be exactly same as the original vertex list.
+	///     Polygon modifier creates the polygon (vertex&triangles) using the original vertex list.
+	///     Currently uses Triangle.Net for triangulation, which occasionally adds extra vertices to maintain a good
+	///     triangulation so output vertex list might not be exactly same as the original vertex list.
 	/// </summary>
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Polygon Mesh Modifier")]
 	public class PolygonMeshModifier : MeshGenerationBase
 	{
-		public override ModifierType Type
-		{
-			get { return ModifierType.Preprocess; }
-		}
-
 		private UVModifierOptions _options;
 		private Vector3 _v1, _v2;
 
-		#region Atlas Fields
-
-		private Vector3 _vert;
-		private AtlasEntity _currentFacade;
-		private Quaternion _textureDirection;
-		private Vector2[] _textureUvCoordinates;
-		private Vector3 _vertexRelativePos;
-		private Vector3 _firstVert;
-
-		private float minx;
-		private float miny;
-		private float maxx;
-		private float maxy;
-
-		#endregion
+		public override ModifierType Type => ModifierType.Preprocess;
 
 		public override void SetProperties(ModifierProperties properties)
 		{
-			_options = (UVModifierOptions) properties;
+			_options = (UVModifierOptions)properties;
 			_options.PropertyHasChanged += UpdateModifier;
 		}
 
@@ -53,19 +33,13 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		public override void Run(VectorFeatureUnity feature, MeshData md, UnityTile tile = null)
 		{
 			if (Criteria != null && Criteria.Count > 0)
-			{
 				foreach (var criterion in Criteria)
-				{
 					if (criterion.ShouldReplaceFeature(feature))
-					{
 						return;
-					}
-				}
-			}
 
 			var _counter = feature.Points.Count;
 			var subset = new List<List<Vector3>>(_counter);
-			Data flatData = null;
+			Assets.Mapbox.Unity.MeshGeneration.Modifiers.MeshModifiers.Data flatData = null;
 			List<int> result = null;
 			var currentIndex = 0;
 			int vertCount = 0, polygonVertexCount = 0;
@@ -73,8 +47,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			List<Vector3> sub = null;
 
 
-
-			for (int i = 0; i < _counter; i++)
+			for (var i = 0; i < _counter; i++)
 			{
 				sub = feature.Points[i];
 				//earcut is built to handle one polygon with multiple holes
@@ -87,18 +60,11 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					result = EarcutLibrary.Earcut(flatData.Vertices, flatData.Holes, flatData.Dim);
 					polygonVertexCount = result.Count;
 					if (triList == null)
-					{
 						triList = new List<int>(polygonVertexCount);
-					}
 					else
-					{
 						triList.Capacity = triList.Count + polygonVertexCount;
-					}
 
-					for (int j = 0; j < polygonVertexCount; j++)
-					{
-						triList.Add(result[j] + currentIndex);
-					}
+					for (var j = 0; j < polygonVertexCount; j++) triList.Add(result[j] + currentIndex);
 
 					currentIndex = vertCount;
 					subset.Clear();
@@ -112,9 +78,9 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				md.Edges.Capacity = md.Edges.Count + polygonVertexCount * 2;
 				var _size = md.TileRect.Size;
 
-				for (int j = 0; j < polygonVertexCount; j++)
+				for (var j = 0; j < polygonVertexCount; j++)
 				{
-					md.Edges.Add(vertCount + ((j + 1) % polygonVertexCount));
+					md.Edges.Add(vertCount + (j + 1) % polygonVertexCount);
 					md.Edges.Add(vertCount + j);
 					md.Vertices.Add(sub[j]);
 					md.Tangents.Add(Constants.Math.Vector3Forward);
@@ -123,8 +89,8 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					if (_options.style == StyleTypes.Satellite)
 					{
 						var fromBottomLeft = new Vector2(
-							(float) (((sub[j].x + md.PositionInTile.x) / tile.TileScale + _size.x / 2) / _size.x),
-							(float) (((sub[j].z + md.PositionInTile.z) / tile.TileScale + _size.x / 2) / _size.x));
+							(float)(((sub[j].x + md.PositionInTile.x) / tile.TileScale + _size.x / 2) / _size.x),
+							(float)(((sub[j].z + md.PositionInTile.z) / tile.TileScale + _size.x / 2) / _size.x));
 						md.UV[0].Add(fromBottomLeft);
 					}
 					else if (_options.texturingType == UvMapType.Tiled)
@@ -140,7 +106,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 			if (_options.texturingType == UvMapType.Atlas || _options.texturingType == UvMapType.AtlasWithColorPalette)
 			{
-				_currentFacade = _options.atlasInfo.Roofs[UnityEngine.Random.Range(0, _options.atlasInfo.Roofs.Count)];
+				_currentFacade = _options.atlasInfo.Roofs[Random.Range(0, _options.atlasInfo.Roofs.Count)];
 
 				minx = float.MaxValue;
 				miny = float.MaxValue;
@@ -148,10 +114,11 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				maxy = float.MinValue;
 
 				_textureUvCoordinates = new Vector2[md.Vertices.Count];
-				_textureDirection = Quaternion.FromToRotation((md.Vertices[0] - md.Vertices[1]), Mapbox.Unity.Constants.Math.Vector3Right);
+				_textureDirection =
+					Quaternion.FromToRotation(md.Vertices[0] - md.Vertices[1], Constants.Math.Vector3Right);
 				_textureUvCoordinates[0] = new Vector2(0, 0);
 				_firstVert = md.Vertices[0];
-				for (int i = 1; i < md.Vertices.Count; i++)
+				for (var i = 1; i < md.Vertices.Count; i++)
 				{
 					_vert = md.Vertices[i];
 					_vertexRelativePos = _vert - _firstVert;
@@ -170,27 +137,20 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				var width = maxx - minx;
 				var height = maxy - miny;
 
-				for (int i = 0; i < md.Vertices.Count; i++)
-				{
+				for (var i = 0; i < md.Vertices.Count; i++)
 					md.UV[0].Add(new Vector2(
-						(((_textureUvCoordinates[i].x - minx) / width) * _currentFacade.TextureRect.width) + _currentFacade.TextureRect.x,
-						(((_textureUvCoordinates[i].y - miny) / height) * _currentFacade.TextureRect.height) + _currentFacade.TextureRect.y));
-				}
+						(_textureUvCoordinates[i].x - minx) / width * _currentFacade.TextureRect.width +
+						_currentFacade.TextureRect.x,
+						(_textureUvCoordinates[i].y - miny) / height * _currentFacade.TextureRect.height +
+						_currentFacade.TextureRect.y));
 			}
 
 			if (triList == null)
-			{
 				triList = new List<int>(polygonVertexCount);
-			}
 			else
-			{
 				triList.Capacity = triList.Count + polygonVertexCount;
-			}
 
-			for (int i = 0; i < polygonVertexCount; i++)
-			{
-				triList.Add(result[i] + currentIndex);
-			}
+			for (var i = 0; i < polygonVertexCount; i++) triList.Add(result[i] + currentIndex);
 
 			md.Triangles.Add(triList);
 		}
@@ -198,9 +158,9 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 		private bool IsClockwise(IList<Vector3> vertices)
 		{
-			double sum = 0.0;
+			var sum = 0.0;
 			var _counter = vertices.Count;
-			for (int i = 0; i < _counter; i++)
+			for (var i = 0; i < _counter; i++)
 			{
 				_v1 = vertices[i];
 				_v2 = vertices[(i + 1) % _counter];
@@ -209,5 +169,21 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 			return sum > 0.0;
 		}
+
+		#region Atlas Fields
+
+		private Vector3 _vert;
+		private AtlasEntity _currentFacade;
+		private Quaternion _textureDirection;
+		private Vector2[] _textureUvCoordinates;
+		private Vector3 _vertexRelativePos;
+		private Vector3 _firstVert;
+
+		private float minx;
+		private float miny;
+		private float maxx;
+		private float maxy;
+
+		#endregion
 	}
 }

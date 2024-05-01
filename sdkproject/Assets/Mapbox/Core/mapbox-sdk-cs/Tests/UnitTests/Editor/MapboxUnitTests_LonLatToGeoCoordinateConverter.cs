@@ -4,30 +4,27 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Json;
+using Mapbox.Utils;
+using Mapbox.Utils.JsonConverters;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using Mapbox.Json;
-	using Mapbox.Utils;
-	using Mapbox.Utils.JsonConverters;
-	using NUnit.Framework;
-
-
 	[TestFixture]
 	internal class LonLatToVector2dConverterTest
 	{
-
 		// Mapbox API returns longitude,latitude
-		private string _lonLatStr = "[-77.0295,38.9165]";
+		private readonly string _lonLatStr = "[-77.0295,38.9165]";
 
 		// In Unity, x = latitude, y = longitude
-		private Vector2d _latLonObject = new Vector2d(y: -77.0295, x: 38.9165);
+		private Vector2d _latLonObject = new(y: -77.0295, x: 38.9165);
 
 
 		[Test]
 		public void Deserialize()
 		{
-			Vector2d deserializedLonLat = JsonConvert.DeserializeObject<Vector2d>(_lonLatStr, JsonConverters.Converters);
+			var deserializedLonLat = JsonConvert.DeserializeObject<Vector2d>(_lonLatStr, JsonConverters.Converters);
 			Assert.AreEqual(_latLonObject.ToString(), deserializedLonLat.ToString());
 		}
 
@@ -35,10 +32,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		[Test]
 		public void Serialize()
 		{
-			string serializedLonLat = JsonConvert.SerializeObject(_latLonObject, JsonConverters.Converters);
+			var serializedLonLat = JsonConvert.SerializeObject(_latLonObject, JsonConverters.Converters);
 			Assert.AreEqual(_lonLatStr, serializedLonLat);
 		}
-
-
 	}
 }

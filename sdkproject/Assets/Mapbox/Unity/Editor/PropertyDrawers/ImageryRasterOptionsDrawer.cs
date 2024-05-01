@@ -1,14 +1,15 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
+﻿using Mapbox.Unity.Map;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(ImageryRasterOptions))]
 	public class ImageryRasterOptionsDrawer : PropertyDrawer
 	{
-		static float lineHeight = EditorGUIUtility.singleLineHeight;
-		bool showPosition = true;
+		private static readonly float lineHeight = EditorGUIUtility.singleLineHeight;
+		private readonly bool showPosition = true;
+
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			EditorGUI.BeginProperty(position, label, property);
@@ -23,10 +24,11 @@
 
 			EditorGUI.EndProperty();
 		}
+
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
-			int rows = (showPosition) ? 3 : 1;
-			return (float)rows * lineHeight;
+			var rows = showPosition ? 3 : 1;
+			return rows * lineHeight;
 		}
 	}
 }

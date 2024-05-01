@@ -1,50 +1,53 @@
-﻿namespace Mapbox.Unity.Location
-{
-	using UnityEngine;
-	using System.Collections;
-	using System.Globalization;
-	using System;
-	using System.IO;
-	using System.Text;
-	using Mapbox.Utils;
+﻿using System;
+using System.Collections;
+using Mapbox.Utils;
+using UnityEngine;
 
+namespace Mapbox.Unity.Location
+{
 	public class DeviceLocationProviderAndroidNative : AbstractLocationProvider, IDisposable
 	{
+		/// <summary>
+		///     The minimum distance (measured in meters) a device must move laterally before location is updated.
+		///     https://developer.android.com/reference/android/location/LocationManager.html#requestLocationUpdates(java.lang.String,%20long,%20float,%20android.location.LocationListener)
+		/// </summary>
+		[SerializeField]
+		[Tooltip(
+			"The minimum distance (measured in meters) a device must move laterally before location is updated. Higher values like 500 imply less overhead.")]
+		private float _updateDistanceInMeters;
 
 
 		/// <summary>
-		/// The minimum distance (measured in meters) a device must move laterally before location is updated. 
-		/// https://developer.android.com/reference/android/location/LocationManager.html#requestLocationUpdates(java.lang.String,%20long,%20float,%20android.location.LocationListener)
+		///     The minimum time interval between location updates, in milliseconds.
+		///     https://developer.android.com/reference/android/location/LocationManager.html#requestLocationUpdates(java.lang.String,%20long,%20float,%20android.location.LocationListener)
 		/// </summary>
 		[SerializeField]
-		[Tooltip("The minimum distance (measured in meters) a device must move laterally before location is updated. Higher values like 500 imply less overhead.")]
-		float _updateDistanceInMeters = 0.0f;
-
-
-		/// <summary>
-		/// The minimum time interval between location updates, in milliseconds.
-		/// https://developer.android.com/reference/android/location/LocationManager.html#requestLocationUpdates(java.lang.String,%20long,%20float,%20android.location.LocationListener)
-		/// </summary>
-		[SerializeField]
-		[Tooltip("The minimum time interval between location updates, in milliseconds. It's reasonable to not go below 500ms.")]
-		long _updateTimeInMilliSeconds = 1000;
+		[Tooltip(
+			"The minimum time interval between location updates, in milliseconds. It's reasonable to not go below 500ms.")]
+		private long _updateTimeInMilliSeconds = 1000;
 
 
 		private WaitForSeconds _wait1sec;
 		private WaitForSeconds _wait5sec;
 		private WaitForSeconds _wait60sec;
+
 		/// <summary>polls location provider only at the requested update intervall to reduce load</summary>
 		private WaitForSeconds _waitUpdateTime;
+
 		private bool _disposed;
-		private static object _lock = new object();
+		private static readonly object _lock = new();
 		private Coroutine _pollLocation;
 
-		private AndroidJavaObject _activityContext = null;
+		private AndroidJavaObject _activityContext;
 		private AndroidJavaObject _gpsInstance;
 		private AndroidJavaObject _sensorInstance;
 
 
-		~DeviceLocationProviderAndroidNative() { Dispose(false); }
+		~DeviceLocationProviderAndroidNative()
+		{
+			Dispose(false);
+		}
+
 		public void Dispose()
 		{
 			Dispose(true);
@@ -56,10 +59,7 @@
 		{
 			if (!_disposed)
 			{
-				if (disposeManagedResources)
-				{
-					shutdown();
-				}
+				if (disposeManagedResources) shutdown();
 				_disposed = true;
 			}
 		}
@@ -77,6 +77,7 @@
 						_gpsInstance.Dispose();
 						_gpsInstance = null;
 					}
+
 					if (null != _sensorInstance)
 					{
 						_sensorInstance.Call("stopSensorListeners");
@@ -92,23 +93,31 @@
 		}
 
 
-		protected virtual void OnDestroy() { shutdown(); }
+		protected virtual void OnDestroy()
+		{
+			shutdown();
+		}
 
 
-		protected virtual void OnDisable() { shutdown(); }
+		protected virtual void OnDisable()
+		{
+			shutdown();
+		}
 
 		protected virtual void Awake()
 		{
 			// safe measures to not run when disabled or not selected as location provider
-			if (!enabled) { return; }
-			if (!transform.gameObject.activeInHierarchy) { return; }
+			if (!enabled) return;
+			if (!transform.gameObject.activeInHierarchy) return;
 
 
 			_wait1sec = new WaitForSeconds(1);
 			_wait5sec = new WaitForSeconds(5);
 			_wait60sec = new WaitForSeconds(60);
 			// throttle if entered update intervall is unreasonably low
-			_waitUpdateTime = _updateTimeInMilliSeconds < 500 ? new WaitForSeconds(0.5f) : new WaitForSeconds((float)_updateTimeInMilliSeconds / 1000.0f);
+			_waitUpdateTime = _updateTimeInMilliSeconds < 500
+				? new WaitForSeconds(0.5f)
+				: new WaitForSeconds(_updateTimeInMilliSeconds / 1000.0f);
 
 			_currentLocation.IsLocationServiceEnabled = false;
 			_currentLocation.IsLocationServiceInitializing = true;
@@ -119,17 +128,14 @@
 				getGpsInstance(true);
 				getSensorInstance();
 
-				if (_pollLocation == null)
-				{
-					_pollLocation = StartCoroutine(locationRoutine());
-				}
+				if (_pollLocation == null) _pollLocation = StartCoroutine(locationRoutine());
 			}
 		}
 
 
 		private void getActivityContext()
 		{
-			using (AndroidJavaClass activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+			using (var activityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
 			{
 				_activityContext = activityClass.GetStatic<AndroidJavaObject>("currentActivity");
 			}
@@ -137,16 +143,15 @@
 			if (null == _activityContext)
 			{
 				Debug.LogError("Could not get UnityPlayer activity");
-				return;
 			}
 		}
 
 
 		private void getGpsInstance(bool showToastMessages = false)
 		{
-			if (null == _activityContext) { return; }
+			if (null == _activityContext) return;
 
-			using (AndroidJavaClass androidGps = new AndroidJavaClass("com.mapbox.android.unity.AndroidGps"))
+			using (var androidGps = new AndroidJavaClass("com.mapbox.android.unity.AndroidGps"))
 			{
 				if (null == androidGps)
 				{
@@ -161,7 +166,11 @@
 					return;
 				}
 
-				_activityContext.Call("runOnUiThread", new AndroidJavaRunnable(() => { _gpsInstance.Call("showMessage", "starting location listeners"); }));
+				_activityContext.Call("runOnUiThread",
+					new AndroidJavaRunnable(() =>
+					{
+						_gpsInstance.Call("showMessage", "starting location listeners");
+					}));
 
 				_gpsInstance.Call("startLocationListeners", _updateDistanceInMeters, _updateTimeInMilliSeconds);
 			}
@@ -170,9 +179,9 @@
 
 		private void getSensorInstance()
 		{
-			if (null == _activityContext) { return; }
+			if (null == _activityContext) return;
 
-			using (AndroidJavaClass androidSensors = new AndroidJavaClass("com.mapbox.android.unity.AndroidSensors"))
+			using (var androidSensors = new AndroidJavaClass("com.mapbox.android.unity.AndroidSensors"))
 			{
 				if (null == androidSensors)
 				{
@@ -193,7 +202,6 @@
 
 		private IEnumerator locationRoutine()
 		{
-
 			while (true)
 			{
 				// couldn't get player activity, wait and retry
@@ -204,6 +212,7 @@
 					getActivityContext();
 					continue;
 				}
+
 				// couldn't get gps plugin instance, wait and retry
 				if (null == _gpsInstance)
 				{
@@ -215,11 +224,9 @@
 
 				// update device orientation
 				if (null != _sensorInstance)
-				{
 					_currentLocation.DeviceOrientation = _sensorInstance.Call<float>("getOrientation");
-				}
 
-				bool locationServiceAvailable = _gpsInstance.Call<bool>("getIsLocationServiceAvailable");
+				var locationServiceAvailable = _gpsInstance.Call<bool>("getIsLocationServiceAvailable");
 				_currentLocation.IsLocationServiceEnabled = locationServiceAvailable;
 
 				// app might have been started with location OFF but switched on after start
@@ -246,16 +253,16 @@
 
 				try
 				{
-					AndroidJavaObject locNetwork = _gpsInstance.Get<AndroidJavaObject>("lastKnownLocationNetwork");
-					AndroidJavaObject locGps = _gpsInstance.Get<AndroidJavaObject>("lastKnownLocationGps");
+					var locNetwork = _gpsInstance.Get<AndroidJavaObject>("lastKnownLocationNetwork");
+					var locGps = _gpsInstance.Get<AndroidJavaObject>("lastKnownLocationGps");
 
 					// easy cases: neither or either gps location or network location available
-					if (null == locGps & null == locNetwork) { populateCurrentLocation(null); }
-					if (null != locGps && null == locNetwork) { populateCurrentLocation(locGps); }
-					if (null == locGps && null != locNetwork) { populateCurrentLocation(locNetwork); }
+					if ((null == locGps) & (null == locNetwork)) populateCurrentLocation(null);
+					if (null != locGps && null == locNetwork) populateCurrentLocation(locGps);
+					if (null == locGps && null != locNetwork) populateCurrentLocation(locNetwork);
 
 					// gps- and network location available: figure out which one to use
-					if (null != locGps && null != locNetwork) { populateWithBetterLocation(locGps, locNetwork); }
+					if (null != locGps && null != locNetwork) populateWithBetterLocation(locGps, locNetwork);
 
 
 					_currentLocation.TimestampDevice = UnixTimestampUtils.To(DateTime.UtcNow);
@@ -263,8 +270,9 @@
 				}
 				catch (Exception ex)
 				{
-					Debug.LogErrorFormat("GPS plugin error: " + ex.ToString());
+					Debug.LogErrorFormat("GPS plugin error: " + ex);
 				}
+
 				yield return _waitUpdateTime;
 			}
 		}
@@ -279,26 +287,26 @@
 				return;
 			}
 
-			double lat = location.Call<double>("getLatitude");
-			double lng = location.Call<double>("getLongitude");
-			Utils.Vector2d newLatLng = new Utils.Vector2d(lat, lng);
-			bool coordinatesUpdated = !newLatLng.Equals(_currentLocation.LatitudeLongitude);
+			var lat = location.Call<double>("getLatitude");
+			var lng = location.Call<double>("getLongitude");
+			var newLatLng = new Vector2d(lat, lng);
+			var coordinatesUpdated = !newLatLng.Equals(_currentLocation.LatitudeLongitude);
 			_currentLocation.LatitudeLongitude = newLatLng;
 
-			float newAccuracy = location.Call<float>("getAccuracy");
-			bool accuracyUpdated = newAccuracy != _currentLocation.Accuracy;
+			var newAccuracy = location.Call<float>("getAccuracy");
+			var accuracyUpdated = newAccuracy != _currentLocation.Accuracy;
 			_currentLocation.Accuracy = newAccuracy;
 
 			// divide by 1000. Android returns milliseconds, we work with seconds
-			long newTimestamp = location.Call<long>("getTime") / 1000;
-			bool timestampUpdated = newTimestamp != _currentLocation.Timestamp;
+			var newTimestamp = location.Call<long>("getTime") / 1000;
+			var timestampUpdated = newTimestamp != _currentLocation.Timestamp;
 			_currentLocation.Timestamp = newTimestamp;
 
-			string newProvider = location.Call<string>("getProvider");
-			bool providerUpdated = newProvider != _currentLocation.Provider;
+			var newProvider = location.Call<string>("getProvider");
+			var providerUpdated = newProvider != _currentLocation.Provider;
 			_currentLocation.Provider = newProvider;
 
-			bool hasBearing = location.Call<bool>("hasBearing");
+			var hasBearing = location.Call<bool>("hasBearing");
 			// only evalute bearing when location object actually has a bearing
 			// Android populates bearing (which is not equal to device orientation)
 			// only when the device is moving.
@@ -312,13 +320,13 @@
 			}
 			else
 			{
-				float newHeading = location.Call<float>("getBearing");
+				var newHeading = location.Call<float>("getBearing");
 				_currentLocation.IsUserHeadingUpdated = newHeading != _currentLocation.UserHeading;
 				_currentLocation.UserHeading = newHeading;
 			}
 
 			float? newSpeed = location.Call<float>("getSpeed");
-			bool speedUpdated = newSpeed != _currentLocation.SpeedMetersPerSecond;
+			var speedUpdated = newSpeed != _currentLocation.SpeedMetersPerSecond;
 			_currentLocation.SpeedMetersPerSecond = newSpeed;
 
 			// flag location as updated if any of below conditions evaluates to true
@@ -332,7 +340,7 @@
 
 			// Un-comment if required. Throws a warning right now. 
 			//bool networkEnabled = _gpsInstance.Call<bool>("getIsNetworkEnabled");
-			bool gpsEnabled = _gpsInstance.Call<bool>("getIsGpsEnabled");
+			var gpsEnabled = _gpsInstance.Call<bool>("getIsGpsEnabled");
 			if (!gpsEnabled)
 			{
 				_currentLocation.HasGpsFix = null;
@@ -345,21 +353,19 @@
 				_currentLocation.SatellitesInView = _gpsInstance.Get<int>("satellitesInView");
 				_currentLocation.SatellitesUsed = _gpsInstance.Get<int>("satellitesUsedInFix");
 			}
-
 		}
 
 
 		/// <summary>
-		/// If GPS and network location are available use the newer/better one
+		///     If GPS and network location are available use the newer/better one
 		/// </summary>
 		/// <param name="locGps"></param>
 		/// <param name="locNetwork"></param>
 		private void populateWithBetterLocation(AndroidJavaObject locGps, AndroidJavaObject locNetwork)
 		{
-
 			// check which location is fresher
-			long timestampGps = locGps.Call<long>("getTime");
-			long timestampNet = locNetwork.Call<long>("getTime");
+			var timestampGps = locGps.Call<long>("getTime");
+			var timestampNet = locNetwork.Call<long>("getTime");
 			if (timestampGps > timestampNet)
 			{
 				populateCurrentLocation(locGps);
@@ -367,8 +373,8 @@
 			}
 
 			// check which location has better accuracy
-			float accuracyGps = locGps.Call<float>("getAccuracy");
-			float accuracyNet = locNetwork.Call<float>("getAccuracy");
+			var accuracyGps = locGps.Call<float>("getAccuracy");
+			var accuracyNet = locNetwork.Call<float>("getAccuracy");
 			if (accuracyGps < accuracyNet)
 			{
 				populateCurrentLocation(locGps);
@@ -380,11 +386,11 @@
 		}
 
 #if UNITY_ANDROID
-
 		private string time2str(AndroidJavaObject loc)
 		{
 			long time = loc.Call<long>("getTime");
-			DateTime dtPlugin = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).Add(TimeSpan.FromMilliseconds(time));
+			DateTime dtPlugin =
+ new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).Add(TimeSpan.FromMilliseconds(time));
 			return dtPlugin.ToString("yyyyMMdd HHmmss");
 		}
 
@@ -410,8 +416,5 @@
 		}
 
 #endif
-
-
-
 	}
 }

@@ -4,18 +4,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace Mapbox.Geocoding {
-    using System;
-    using Mapbox.Json;
-    using Mapbox.Utils;
-    using Mapbox.Utils.JsonConverters;
+using System;
+using Mapbox.Json;
+using Mapbox.Utils;
+using Mapbox.Utils.JsonConverters;
 
-    /// <summary> Point geometry representing location of geocode result. </summary>
+namespace Mapbox.Geocoding
+{
+	/// <summary> Point geometry representing location of geocode result. </summary>
 #if !WINDOWS_UWP
-    //http://stackoverflow.com/a/12903628
-    [Serializable]
+	//http://stackoverflow.com/a/12903628
+	[Serializable]
 #endif
-	public class Geometry {
+	public class Geometry
+	{
 		/// <summary>
 		///     Gets or sets type. Geocode results will always be type: point.
 		/// </summary>

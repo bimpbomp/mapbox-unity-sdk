@@ -1,16 +1,16 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using Mapbox.Unity.MeshGeneration.Modifiers;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomEditor(typeof(ModifierStack))]
 	public class ModifierStackEditor : UnityEditor.Editor
 	{
+		private Texture2D _magnifier;
+		private SerializedProperty _positionType;
 
 		private MonoScript script;
-		private SerializedProperty _positionType;
-		private Texture2D _magnifier;
 
 		private void OnEnable()
 		{
@@ -33,72 +33,66 @@
 			EditorGUILayout.Space();
 			EditorGUILayout.LabelField("Mesh Modifiers");
 			var meshfac = serializedObject.FindProperty("MeshModifiers");
-			for (int i = 0; i < meshfac.arraySize; i++)
+			for (var i = 0; i < meshfac.arraySize; i++)
 			{
 				var ind = i;
 				EditorGUILayout.BeginHorizontal();
 				EditorGUILayout.BeginVertical();
 				GUILayout.Space(5);
-				meshfac.GetArrayElementAtIndex(ind).objectReferenceValue = EditorGUILayout.ObjectField(meshfac.GetArrayElementAtIndex(i).objectReferenceValue, typeof(MeshModifier), false) as ScriptableObject;
+				meshfac.GetArrayElementAtIndex(ind).objectReferenceValue =
+					EditorGUILayout.ObjectField(meshfac.GetArrayElementAtIndex(i).objectReferenceValue,
+						typeof(MeshModifier), false) as ScriptableObject;
 				EditorGUILayout.EndVertical();
-				if (GUILayout.Button(_magnifier, (GUIStyle)"minibuttonleft", GUILayout.Width(30)))
-				{
+				if (GUILayout.Button(_magnifier, "minibuttonleft", GUILayout.Width(30)))
 					ScriptableCreatorWindow.Open(typeof(MeshModifier), meshfac, ind);
-				}
-				if (GUILayout.Button(new GUIContent("-"), (GUIStyle)"minibuttonright", GUILayout.Width(30), GUILayout.Height(22)))
-				{
+				if (GUILayout.Button(new GUIContent("-"), "minibuttonright", GUILayout.Width(30), GUILayout.Height(22)))
 					meshfac.DeleteArrayElementAtIndex(ind);
-				}
 				EditorGUILayout.EndHorizontal();
 			}
 
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button(new GUIContent("Add New Empty"), (GUIStyle)"minibuttonleft"))
+			if (GUILayout.Button(new GUIContent("Add New Empty"), "minibuttonleft"))
 			{
 				meshfac.arraySize++;
 				meshfac.GetArrayElementAtIndex(meshfac.arraySize - 1).objectReferenceValue = null;
 			}
-			if (GUILayout.Button(new GUIContent("Find Asset"), (GUIStyle)"minibuttonright"))
-			{
+
+			if (GUILayout.Button(new GUIContent("Find Asset"), "minibuttonright"))
 				ScriptableCreatorWindow.Open(typeof(MeshModifier), meshfac);
-			}
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.Space();
 			EditorGUILayout.LabelField("Game Object Modifiers");
 			var gofac = serializedObject.FindProperty("GoModifiers");
-			for (int i = 0; i < gofac.arraySize; i++)
+			for (var i = 0; i < gofac.arraySize; i++)
 			{
 				var ind = i;
 				EditorGUILayout.BeginHorizontal();
 				EditorGUILayout.BeginVertical();
 				GUILayout.Space(5);
-				gofac.GetArrayElementAtIndex(ind).objectReferenceValue = EditorGUILayout.ObjectField(gofac.GetArrayElementAtIndex(i).objectReferenceValue, typeof(GameObjectModifier), false) as ScriptableObject;
+				gofac.GetArrayElementAtIndex(ind).objectReferenceValue =
+					EditorGUILayout.ObjectField(gofac.GetArrayElementAtIndex(i).objectReferenceValue,
+						typeof(GameObjectModifier), false) as ScriptableObject;
 				EditorGUILayout.EndVertical();
 
-				if (GUILayout.Button(_magnifier, (GUIStyle)"minibuttonleft", GUILayout.Width(30)))
-				{
+				if (GUILayout.Button(_magnifier, "minibuttonleft", GUILayout.Width(30)))
 					ScriptableCreatorWindow.Open(typeof(GameObjectModifier), gofac, ind);
-				}
-				if (GUILayout.Button(new GUIContent("-"), (GUIStyle)"minibuttonright", GUILayout.Width(30), GUILayout.Height(22)))
-				{
+				if (GUILayout.Button(new GUIContent("-"), "minibuttonright", GUILayout.Width(30), GUILayout.Height(22)))
 					gofac.DeleteArrayElementAtIndex(ind);
-				}
 				EditorGUILayout.EndHorizontal();
 			}
 
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button(new GUIContent("Add New Empty"), (GUIStyle)"minibuttonleft"))
+			if (GUILayout.Button(new GUIContent("Add New Empty"), "minibuttonleft"))
 			{
 				gofac.arraySize++;
 				gofac.GetArrayElementAtIndex(gofac.arraySize - 1).objectReferenceValue = null;
 			}
-			if (GUILayout.Button(new GUIContent("Find Asset"), (GUIStyle)"minibuttonright"))
-			{
+
+			if (GUILayout.Button(new GUIContent("Find Asset"), "minibuttonright"))
 				ScriptableCreatorWindow.Open(typeof(GameObjectModifier), gofac);
-			}
 			EditorGUILayout.EndHorizontal();
 
 			serializedObject.ApplyModifiedProperties();

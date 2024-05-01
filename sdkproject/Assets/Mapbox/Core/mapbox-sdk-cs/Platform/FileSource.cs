@@ -4,26 +4,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-using Mapbox.Unity;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Mapbox.Map;
 
 namespace Mapbox.Platform
 {
-	using Mapbox.Map;
-	using Mapbox.Unity.Utilities;
-	using System;
-	using System.Collections;
-	using System.Collections.Generic;
-	using System.Linq;
-	using System.Net;
-	using System.Net.Security;
 #if !NETFX_CORE
-	using System.Security.Cryptography.X509Certificates;
 #endif
 #if !UNITY_5_3_OR_NEWER
 	using System.Threading;
 #endif
 #if UNITY_EDITOR
-	using UnityEditor;
 #endif
 #if UNITY_5_3_OR_NEWER
 	using UnityEngine;
@@ -40,18 +34,25 @@ namespace Mapbox.Platform
 	/// </remarks>
 	public sealed class FileSource : IFileSource
 	{
-
-		private Func<string> _getMapsSkuToken;
-		private readonly Dictionary<IAsyncRequest, int> _requests = new Dictionary<IAsyncRequest, int>();
+		private readonly Func<string> _getMapsSkuToken;
+		private readonly Dictionary<IAsyncRequest, int> _requests = new();
 		private readonly string _accessToken;
-		private readonly object _lock = new object();
+		private readonly object _lock = new();
 
 		/// <summary>Length of rate-limiting interval in seconds. https://www.mapbox.com/api-documentation/#rate-limit-headers </summary>
 #pragma warning disable 0414
 		private int? XRateLimitInterval;
-		/// <summary>Maximum number of requests you may make in the current interval before reaching the limit. https://www.mapbox.com/api-documentation/#rate-limit-headers </summary>
+
+		/// <summary>
+		///     Maximum number of requests you may make in the current interval before reaching the limit.
+		///     https://www.mapbox.com/api-documentation/#rate-limit-headers
+		/// </summary>
 		private long? XRateLimitLimit;
-		/// <summary>Timestamp of when the current interval will end and the ratelimit counter is reset. https://www.mapbox.com/api-documentation/#rate-limit-headers </summary>
+
+		/// <summary>
+		///     Timestamp of when the current interval will end and the ratelimit counter is reset.
+		///     https://www.mapbox.com/api-documentation/#rate-limit-headers
+		/// </summary>
 		private DateTime? XRateLimitReset;
 #pragma warning restore 0414
 
@@ -60,13 +61,9 @@ namespace Mapbox.Platform
 		{
 			_getMapsSkuToken = getMapsSkuToken;
 			if (string.IsNullOrEmpty(acessToken))
-			{
 				_accessToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
-			}
 			else
-			{
 				_accessToken = acessToken;
-			}
 		}
 
 		/// <summary> Performs a request asynchronously. </summary>
@@ -81,18 +78,19 @@ namespace Mapbox.Platform
 			string url
 			, Action<Response> callback
 			, int timeout = 10
-			, CanonicalTileId tileId = new CanonicalTileId()
+			, CanonicalTileId tileId = new()
 			, string tilesetId = null
 		)
 		{
 			if (!string.IsNullOrEmpty(_accessToken))
 			{
 				var uriBuilder = new UriBuilder(url);
-				string accessTokenQuery = "access_token=" + _accessToken;
-				string skuToken = "sku=" + _getMapsSkuToken();
+				var accessTokenQuery = "access_token=" + _accessToken;
+				var skuToken = "sku=" + _getMapsSkuToken();
 				if (uriBuilder.Query != null && uriBuilder.Query.Length > 1)
 				{
-					uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + accessTokenQuery + "&" + skuToken;;
+					uriBuilder.Query = uriBuilder.Query.Substring(1) + "&" + accessTokenQuery + "&" + skuToken;
+					;
 				}
 				else
 				{
@@ -127,16 +125,15 @@ namespace Mapbox.Platform
 			, string tilesetId
 		)
 		{
-
 			// TODO: plugin caching somewhere around here
 
 			var request = IAsyncRequestFactory.CreateRequest(
 				url
-				, (Response response) =>
+				, response =>
 				{
-					if (response.XRateLimitInterval.HasValue) { XRateLimitInterval = response.XRateLimitInterval; }
-					if (response.XRateLimitLimit.HasValue) { XRateLimitLimit = response.XRateLimitLimit; }
-					if (response.XRateLimitReset.HasValue) { XRateLimitReset = response.XRateLimitReset; }
+					if (response.XRateLimitInterval.HasValue) XRateLimitInterval = response.XRateLimitInterval;
+					if (response.XRateLimitLimit.HasValue) XRateLimitLimit = response.XRateLimitLimit;
+					if (response.XRateLimitReset.HasValue) XRateLimitReset = response.XRateLimitReset;
 					callback(response);
 					lock (_lock)
 					{
@@ -156,11 +153,9 @@ namespace Mapbox.Platform
 			lock (_lock)
 			{
 				//sometimes we get here after the request has already finished
-				if (!request.IsCompleted)
-				{
-					_requests.Add(request, 0);
-				}
+				if (!request.IsCompleted) _requests.Add(request, 0);
 			}
+
 			//yield return request;
 			return request;
 		}
@@ -176,11 +171,9 @@ namespace Mapbox.Platform
 			{
 				lock (_lock)
 				{
-					List<IAsyncRequest> reqs = _requests.Keys.ToList();
-					for (int i = reqs.Count - 1; i > -1; i--)
-					{
+					var reqs = _requests.Keys.ToList();
+					for (var i = reqs.Count - 1; i > -1; i--)
 						if (reqs[i].IsCompleted)
-						{
 							// another place to watch out if request has been cancelled
 							try
 							{
@@ -190,14 +183,12 @@ namespace Mapbox.Platform
 							{
 								System.Diagnostics.Debug.WriteLine(ex);
 							}
-						}
-					}
 				}
+
 				yield return new WaitForSeconds(0.2f);
 			}
 		}
 #endif
-
 
 
 #if !UNITY_5_3_OR_NEWER

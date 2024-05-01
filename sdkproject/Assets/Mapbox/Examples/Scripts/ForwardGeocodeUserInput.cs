@@ -4,54 +4,40 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using Mapbox.Geocoding;
+using Mapbox.Unity;
+using Mapbox.Utils;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples
 {
-	using Mapbox.Unity;
-	using UnityEngine;
-	using UnityEngine.UI;
-	using System;
-	using Mapbox.Geocoding;
-	using Mapbox.Utils;
-
 	[RequireComponent(typeof(InputField))]
 	public class ForwardGeocodeUserInput : MonoBehaviour
 	{
-		InputField _inputField;
+		private InputField _inputField;
 
-		ForwardGeocodeResource _resource;
+		private ForwardGeocodeResource _resource;
 
-		Vector2d _coordinate;
-		public Vector2d Coordinate
-		{
-			get
-			{
-				return _coordinate;
-			}
-		}
+		public Vector2d Coordinate { get; private set; }
 
-		bool _hasResponse;
-		public bool HasResponse
-		{
-			get
-			{
-				return _hasResponse;
-			}
-		}
+		public bool HasResponse { get; private set; }
 
 		public ForwardGeocodeResponse Response { get; private set; }
 
-		public event Action<ForwardGeocodeResponse> OnGeocoderResponse = delegate { };
-
-		void Awake()
+		private void Awake()
 		{
 			_inputField = GetComponent<InputField>();
 			_inputField.onEndEdit.AddListener(HandleUserInput);
 			_resource = new ForwardGeocodeResource("");
 		}
 
-		void HandleUserInput(string searchString)
+		public event Action<ForwardGeocodeResponse> OnGeocoderResponse = delegate { };
+
+		private void HandleUserInput(string searchString)
 		{
-			_hasResponse = false;
+			HasResponse = false;
 			if (!string.IsNullOrEmpty(searchString))
 			{
 				_resource.Query = searchString;
@@ -59,9 +45,9 @@ namespace Mapbox.Examples
 			}
 		}
 
-		void HandleGeocoderResponse(ForwardGeocodeResponse res)
+		private void HandleGeocoderResponse(ForwardGeocodeResponse res)
 		{
-			_hasResponse = true;
+			HasResponse = true;
 			if (null == res)
 			{
 				_inputField.text = "no geocode response";
@@ -69,8 +55,9 @@ namespace Mapbox.Examples
 			else if (null != res.Features && res.Features.Count > 0)
 			{
 				var center = res.Features[0].Center;
-				_coordinate = res.Features[0].Center;
+				Coordinate = res.Features[0].Center;
 			}
+
 			Response = res;
 			OnGeocoderResponse(res);
 		}

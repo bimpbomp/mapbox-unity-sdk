@@ -3,7 +3,4 @@
 	public interface ISubLayerFantasyStyle : ISubLayerStyle
 	{
 	}
-
 }
-
-

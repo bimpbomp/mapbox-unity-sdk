@@ -1,8 +1,8 @@
-﻿namespace Mapbox.Unity.MeshGeneration.Factories
-{
-	using Mapbox.Unity.MeshGeneration.Data;
-	using System;
+﻿using System;
+using Mapbox.Unity.MeshGeneration.Data;
 
+namespace Mapbox.Unity.MeshGeneration.Factories
+{
 	public class TileProcessFinishedEventArgs : EventArgs
 	{
 		public AbstractTileFactory Factory;

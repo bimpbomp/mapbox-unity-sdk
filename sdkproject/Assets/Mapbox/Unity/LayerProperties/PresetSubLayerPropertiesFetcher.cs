@@ -1,49 +1,49 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System.Collections.Generic;
-	using Mapbox.Unity.MeshGeneration.Filters;
-	using Mapbox.Unity.MeshGeneration.Modifiers;
+﻿using System.Collections.Generic;
+using Mapbox.Unity.MeshGeneration.Filters;
+using Mapbox.Unity.MeshGeneration.Modifiers;
 
+namespace Mapbox.Unity.Map
+{
 	public static class PresetSubLayerPropertiesFetcher
 	{
 		/// <summary>
-		/// Gets the default sub layer properties for the chosen preset type.
+		///     Gets the default sub layer properties for the chosen preset type.
 		/// </summary>
 		/// <returns>The sub layer properties.</returns>
 		/// <param name="type">Type.</param>
 		public static VectorSubLayerProperties GetSubLayerProperties(PresetFeatureType type)
 		{
 			//CoreOptions properties
-			VectorPrimitiveType geometryType = VectorPrimitiveType.Polygon;
-			string layerName = "building";
-			string sublayerName = "Untitled";
+			var geometryType = VectorPrimitiveType.Polygon;
+			var layerName = "building";
+			var sublayerName = "Untitled";
 
 			//Line Geometry Options
-			float lineWidth = 1.0f;
+			var lineWidth = 1.0f;
 
 			//Geometry Extrusion Options
-			ExtrusionType extrusionType = ExtrusionType.None;
-			ExtrusionGeometryType extrusionGeometryType = ExtrusionGeometryType.RoofAndSide;
-			string propertyName = "height";
-			float extrusionScaleFactor = 1.0f;
-			float extrusionHeight = 1.0f;
+			var extrusionType = ExtrusionType.None;
+			var extrusionGeometryType = ExtrusionGeometryType.RoofAndSide;
+			var propertyName = "height";
+			var extrusionScaleFactor = 1.0f;
+			var extrusionHeight = 1.0f;
 
 			//Filter Options
-			LayerFilterCombinerOperationType combinerType = LayerFilterCombinerOperationType.Any;
-			List<LayerFilter> filters = new List<LayerFilter>();
+			var combinerType = LayerFilterCombinerOperationType.Any;
+			var filters = new List<LayerFilter>();
 
 
 			// Material Options
-			StyleTypes style = StyleTypes.Realistic;
+			var style = StyleTypes.Realistic;
 
 			//Misc options
-			bool buildingsWithUniqueIds = true;
-			PositionTargetType positionTargetType = PositionTargetType.TileCenter;
+			var buildingsWithUniqueIds = true;
+			var positionTargetType = PositionTargetType.TileCenter;
 
 			//Modifiers
-			List<MeshModifier> meshModifiers = new List<MeshModifier>();
-			List<GameObjectModifier> gameObjectModifiers = new List<GameObjectModifier>();
-			ColliderType colliderType = ColliderType.None;
+			var meshModifiers = new List<MeshModifier>();
+			var gameObjectModifiers = new List<GameObjectModifier>();
+			var colliderType = ColliderType.None;
 
 			switch (type)
 			{
@@ -77,11 +77,9 @@
 					geometryType = VectorPrimitiveType.Custom;
 					style = StyleTypes.Custom;
 					break;
-				default:
-					break;
 			}
 
-			VectorSubLayerProperties _properties = new VectorSubLayerProperties();
+			var _properties = new VectorSubLayerProperties();
 
 			_properties.presetFeatureType = type;
 
@@ -95,10 +93,7 @@
 				sublayerName = sublayerName
 			};
 
-			_properties.lineGeometryOptions = new LineGeometryOptions
-			{
-				Width = lineWidth
-			};
+			_properties.lineGeometryOptions = new LineGeometryOptions { Width = lineWidth };
 
 			_properties.extrusionOptions = new GeometryExtrusionOptions
 			{
@@ -109,32 +104,24 @@
 				maximumHeight = extrusionHeight
 			};
 
-			_properties.filterOptions = new VectorFilterOptions
-			{
-				combinerType = combinerType,
-				filters = filters
-			};
+			_properties.filterOptions = new VectorFilterOptions { combinerType = combinerType, filters = filters };
 
 			_properties.materialOptions = new GeometryMaterialOptions
 			{
-				style = style,
-				colorStyleColor = Constants.GUI.Colors.EDITOR_FEATURE_DEFAULT_COLOR
+				style = style, colorStyleColor = Constants.GUI.Colors.EDITOR_FEATURE_DEFAULT_COLOR
 			};
 			_properties.materialOptions.SetDefaultMaterialOptions();
 			_properties.buildingsWithUniqueIds = buildingsWithUniqueIds;
 			_properties.moveFeaturePositionTo = positionTargetType;
 			_properties.MeshModifiers = meshModifiers;
 			_properties.GoModifiers = gameObjectModifiers;
-			_properties.colliderOptions = new ColliderOptions
-			{
-				colliderType = colliderType
-			};
+			_properties.colliderOptions = new ColliderOptions { colliderType = colliderType };
 
 			return _properties;
 		}
 
 		/// <summary>
-		/// Gets the default preset type from supplied layerName.
+		///     Gets the default preset type from supplied layerName.
 		/// </summary>
 		/// <param name="layerName">Layer name.</param>
 		public static PresetFeatureType GetPresetTypeFromLayerName(string layerName)

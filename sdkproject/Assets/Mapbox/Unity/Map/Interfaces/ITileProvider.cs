@@ -6,14 +6,15 @@ namespace Mapbox.Unity.Map.Interfaces
 {
 	public interface ITileProvider
 	{
-		event EventHandler<ExtentArgs> ExtentChanged;
 		ITileProviderOptions Options { get; }
+		event EventHandler<ExtentArgs> ExtentChanged;
 
 		// TODO: add cancel event?
 		// Alternatively, give mapvisualizer an object recycling strategy that can separately determine when to change gameobjects.
 		// This removal would essentially lead to a cancel request and nothing more.
 
 		void Initialize(IMap map);
+
 		// TODO: Maybe combine both these methods.
 		void SetOptions(ITileProviderOptions options);
 
@@ -33,10 +34,9 @@ namespace Mapbox.Unity.Map.Interfaces
 
 		// TODO: add reset/clear method?
 	}
+
 	public class TileStateChangedEventArgs : EventArgs
 	{
 		public UnwrappedTileId TileId;
 	}
-
-
 }

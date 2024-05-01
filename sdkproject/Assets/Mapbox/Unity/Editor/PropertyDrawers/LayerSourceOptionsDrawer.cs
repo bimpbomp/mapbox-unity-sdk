@@ -1,13 +1,13 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
+﻿using Mapbox.Unity.Map;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(LayerSourceOptions))]
 	public class LayerSourceOptionsDrawer : PropertyDrawer
 	{
-		static float lineHeight = EditorGUIUtility.singleLineHeight;
+		private static readonly float lineHeight = EditorGUIUtility.singleLineHeight;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
@@ -16,6 +16,7 @@
 			EditorGUI.PropertyField(position, property.FindPropertyRelative("layerSource"), label);
 			EditorGUI.EndProperty();
 		}
+
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			return lineHeight;

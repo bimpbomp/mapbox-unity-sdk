@@ -73,7 +73,8 @@ namespace Mapbox.Unity.Telemetry
 
 		public void SendTurnstile()
 		{
-			using (AndroidJavaObject MapboxAndroidTurnstileEvent = new AndroidJavaObject("com.mapbox.android.telemetry.AppUserTurnstile", "MapboxEventsUnityAndroid", Constants.SDK_VERSION))
+			using (AndroidJavaObject MapboxAndroidTurnstileEvent =
+ new AndroidJavaObject("com.mapbox.android.telemetry.AppUserTurnstile", "MapboxEventsUnityAndroid", Constants.SDK_VERSION))
 			{
 				if (null == MapboxAndroidTurnstileEvent)
 				{

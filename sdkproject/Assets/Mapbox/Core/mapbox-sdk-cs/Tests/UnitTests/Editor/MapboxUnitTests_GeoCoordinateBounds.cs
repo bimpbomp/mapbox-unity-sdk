@@ -4,13 +4,11 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
-
 	[TestFixture]
 	internal class Vector2dBoundsTest
 	{
@@ -120,8 +118,5 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			bounds3.Center = new Vector2d(10, 10);
 			Assert.AreEqual(new Vector2dBounds(new Vector2d(0, -10), new Vector2d(20, 30)), bounds3);
 		}
-
-
-
 	}
 }

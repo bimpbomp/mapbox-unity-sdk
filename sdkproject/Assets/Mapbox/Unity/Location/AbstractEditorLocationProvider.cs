@@ -1,23 +1,19 @@
-﻿namespace Mapbox.Unity.Location
-{
-	using System.Collections;
-	using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
+namespace Mapbox.Unity.Location
+{
 	public abstract class AbstractEditorLocationProvider : AbstractLocationProvider
 	{
-		[SerializeField]
-		protected int _accuracy;
+		[SerializeField] protected int _accuracy;
 
-		[SerializeField]
-		bool _autoFireEvent;
+		[SerializeField] private bool _autoFireEvent;
 
-		[SerializeField]
-		float _updateInterval;
+		[SerializeField] private float _updateInterval;
 
-		[SerializeField]
-		bool _sendEvent;
+		[SerializeField] private bool _sendEvent;
 
-		WaitForSeconds _wait = new WaitForSeconds(0);
+		private WaitForSeconds _wait = new(0);
 
 #if UNITY_EDITOR
 		protected virtual void Awake()
@@ -27,7 +23,17 @@
 		}
 #endif
 
-		IEnumerator QueryLocation()
+
+		protected virtual void OnValidate()
+		{
+			if (_sendEvent)
+			{
+				_sendEvent = false;
+				SendLocation(_currentLocation);
+			}
+		}
+
+		private IEnumerator QueryLocation()
 		{
 			// HACK: Let others register before we send our first event. 
 			// Often this happens in Start.
@@ -35,10 +41,7 @@
 			while (true)
 			{
 				SetLocation();
-				if (_autoFireEvent)
-				{
-					SendLocation(_currentLocation);
-				}
+				if (_autoFireEvent) SendLocation(_currentLocation);
 				yield return _wait;
 			}
 		}
@@ -49,16 +52,6 @@
 		{
 			SetLocation();
 			SendLocation(_currentLocation);
-		}
-
-
-		protected virtual void OnValidate()
-		{
-			if (_sendEvent)
-			{
-				_sendEvent = false;
-				SendLocation(_currentLocation);
-			}
 		}
 
 		protected abstract void SetLocation();

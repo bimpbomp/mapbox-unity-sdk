@@ -1,25 +1,20 @@
-﻿namespace Mapbox.Examples
-{
-	using UnityEngine;
+﻿using UnityEngine;
 
+namespace Mapbox.Examples
+{
 	namespace Scripts.Utilities
 	{
 		public class DragRotate : MonoBehaviour
 		{
-			[SerializeField]
-			Transform _objectToRotate;
+			[SerializeField] private Transform _objectToRotate;
 
-			[SerializeField]
-			float _multiplier;
+			[SerializeField] private float _multiplier;
 
-			Vector3 _startTouchPosition;
+			private Vector3 _startTouchPosition;
 
-			void Update()
+			private void Update()
 			{
-				if (Input.GetMouseButtonDown(0))
-				{
-					_startTouchPosition = Input.mousePosition;
-				}
+				if (Input.GetMouseButtonDown(0)) _startTouchPosition = Input.mousePosition;
 
 				if (Input.GetMouseButton(0))
 				{

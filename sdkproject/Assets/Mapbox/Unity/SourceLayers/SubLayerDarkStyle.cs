@@ -2,7 +2,8 @@
 {
 	public class SubLayerDarkStyle : ISubLayerDarkStyle
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerDarkStyle(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
@@ -10,10 +11,7 @@
 
 		public float Opacity
 		{
-			get
-			{
-				return _materialOptions.darkStyleOpacity;
-			}
+			get => _materialOptions.darkStyleOpacity;
 
 			set
 			{
@@ -34,7 +32,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

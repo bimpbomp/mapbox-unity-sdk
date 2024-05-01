@@ -4,23 +4,19 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+
 namespace Mapbox.Utils
 {
-	using System;
-	using System.Collections.Generic;
-	using System.Text;
-
-
 	/// <summary>
-	/// A set of Unix Timestamp utils.
+	///     A set of Unix Timestamp utils.
 	/// </summary>
 	public static class UnixTimestampUtils
 	{
-
 		// http://gigi.nullneuron.net/gigilabs/converting-tofrom-unix-timestamp-in-c/
 
 		/// <summary>
-		/// Convert from DateTime to Unix timestamp
+		///     Convert from DateTime to Unix timestamp
 		/// </summary>
 		/// <param name="date"></param>
 		/// <returns></returns>
@@ -31,7 +27,7 @@ namespace Mapbox.Utils
 
 
 		/// <summary>
-		/// Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromSeconds to caluclate offset since epoch 0
+		///     Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromSeconds to caluclate offset since epoch 0
 		/// </summary>
 		/// <param name="timestamp"></param>
 		/// <returns></returns>
@@ -41,7 +37,7 @@ namespace Mapbox.Utils
 		}
 
 		/// <summary>
-		/// Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromSeconds to caluclate offset since epoch 0
+		///     Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromSeconds to caluclate offset since epoch 0
 		/// </summary>
 		/// <param name="timestamp"></param>
 		/// <returns></returns>
@@ -51,7 +47,7 @@ namespace Mapbox.Utils
 		}
 
 		/// <summary>
-		/// Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromTicks to caluclate offset since epoch 0
+		///     Convert from Unitx timestamp to DateTime. Uses TimeSpan.FromTicks to caluclate offset since epoch 0
 		/// </summary>
 		/// <param name="timestamp"></param>
 		/// <returns></returns>
@@ -59,7 +55,5 @@ namespace Mapbox.Utils
 		{
 			return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).Add(TimeSpan.FromTicks(timestamp));
 		}
-
-
 	}
 }

@@ -1,20 +1,19 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using UnityEngine;
+﻿using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	public class SubLayerCustomStyleTiled : ISubLayerCustomStyleTiled
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerCustomStyleTiled(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
 		}
+
 		public Material TopMaterial
 		{
-			get
-			{
-				return _materialOptions.materials[0].Materials[0];
-			}
+			get => _materialOptions.materials[0].Materials[0];
 			set
 			{
 				if (_materialOptions.materials[0].Materials[0] != value)
@@ -24,12 +23,10 @@
 				}
 			}
 		}
+
 		public Material SideMaterial
 		{
-			get
-			{
-				return _materialOptions.materials[1].Materials[0];
-			}
+			get => _materialOptions.materials[1].Materials[0];
 			set
 			{
 				if (_materialOptions.materials[1].Materials[0] != value)
@@ -50,7 +47,7 @@
 
 		public void SetAsStyle()
 		{
-			SetAsStyle(null, null);
+			SetAsStyle(null);
 		}
 
 		public void SetMaterials(Material topMaterial, Material sideMaterial)
@@ -58,7 +55,4 @@
 			SetAsStyle(topMaterial, sideMaterial);
 		}
 	}
-
 }
-
-

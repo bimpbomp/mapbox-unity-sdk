@@ -2,7 +2,8 @@
 {
 	public class SubLayerLightStyle : ISubLayerLightStyle
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerLightStyle(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
@@ -10,10 +11,7 @@
 
 		public float Opacity
 		{
-			get
-			{
-				return _materialOptions.lightStyleOpacity;
-			}
+			get => _materialOptions.lightStyleOpacity;
 
 			set
 			{
@@ -34,7 +32,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

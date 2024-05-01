@@ -2,7 +2,8 @@
 {
 	public class SubLayerSimpleStyle : ISubLayerSimpleStyle
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerSimpleStyle(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
@@ -10,10 +11,7 @@
 
 		public SamplePalettes PaletteType
 		{
-			get
-			{
-				return _materialOptions.samplePalettes;
-			}
+			get => _materialOptions.samplePalettes;
 
 			set
 			{
@@ -37,7 +35,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

@@ -1,18 +1,30 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using Mapbox.Unity;
 using Mapbox.Unity.Telemetry;
 using UnityEngine;
 
 public class TestTurnstile : MonoBehaviour
 {
-	[SerializeField]
-	public string accessToken;
+	[SerializeField] public string accessToken;
 
-	[SerializeField]
-	public bool _sendEvent = false;
-	ITelemetryLibrary _telemetryLibrary;
+	[SerializeField] public bool _sendEvent;
+
+	private ITelemetryLibrary _telemetryLibrary;
+
+	// Start is called before the first frame update
+	private void Start()
+	{
+	}
+
+	// Update is called once per frame
+	private void Update()
+	{
+		if (_sendEvent)
+		{
+			SendTurnstileEvent();
+			_sendEvent = false;
+		}
+	}
 
 	public void SendTurnstileEvent()
 	{
@@ -29,27 +41,10 @@ public class TestTurnstile : MonoBehaviour
 		}
 	}
 
-	bool GetTelemetryCollectionState()
+	private bool GetTelemetryCollectionState()
 	{
 		if (!PlayerPrefs.HasKey(Constants.Path.SHOULD_COLLECT_LOCATION_KEY))
-		{
 			PlayerPrefs.SetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY, 1);
-		}
 		return PlayerPrefs.GetInt(Constants.Path.SHOULD_COLLECT_LOCATION_KEY) != 0;
-	}
-	// Start is called before the first frame update
-	void Start()
-	{
-
-	}
-
-	// Update is called once per frame
-	void Update()
-	{
-		if (_sendEvent == true)
-		{
-			SendTurnstileEvent();
-			_sendEvent = false;
-		}
 	}
 }

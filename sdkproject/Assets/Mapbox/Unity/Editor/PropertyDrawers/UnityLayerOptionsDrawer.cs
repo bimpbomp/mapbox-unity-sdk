@@ -1,21 +1,22 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEditor;
-	using UnityEngine;
-	using Mapbox.Unity.Map;
+﻿using Mapbox.Unity.Map;
+using UnityEditor;
+using UnityEngine;
 
+namespace Mapbox.Editor
+{
 	[CustomPropertyDrawer(typeof(UnityLayerOptions))]
 	public class UnityLayerOptionsDrawer : PropertyDrawer
 	{
-		static float lineHeight = EditorGUIUtility.singleLineHeight;
+		private static readonly float lineHeight = EditorGUIUtility.singleLineHeight;
 
 		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
 		{
 			var addtoLayerProp = property.FindPropertyRelative("addToLayer");
 			EditorGUI.BeginProperty(position, label, property);
 
-			EditorGUI.PropertyField(new Rect(position.x, position.y, position.width, lineHeight), addtoLayerProp, new GUIContent { text = "Add to Unity layer" });
-			if (addtoLayerProp.boolValue == true)
+			EditorGUI.PropertyField(new Rect(position.x, position.y, position.width, lineHeight), addtoLayerProp,
+				new GUIContent { text = "Add to Unity layer" });
+			if (addtoLayerProp.boolValue)
 			{
 				EditorGUI.indentLevel++;
 				var layerId = property.FindPropertyRelative("layerId");
@@ -25,6 +26,7 @@
 
 			EditorGUI.EndProperty();
 		}
+
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
 			// Reserve space for the total visible properties.

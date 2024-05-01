@@ -1,20 +1,19 @@
+using System;
+using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
+using Random = UnityEngine.Random;
+
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Components;
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Mapbox.Unity.Map;
-	using System;
-
 	/// <summary>
-	/// Texture Modifier is a basic modifier which simply adds a TextureSelector script to the features.
-	/// Logic is all pushed into this TextureSelector mono behaviour to make it's easier to change it in runtime.
+	///     Texture Modifier is a basic modifier which simply adds a TextureSelector script to the features.
+	///     Logic is all pushed into this TextureSelector mono behaviour to make it's easier to change it in runtime.
 	/// </summary>
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Material Modifier")]
 	public class MaterialModifier : GameObjectModifier
 	{
-		[SerializeField]
-		GeometryMaterialOptions _options;
+		[SerializeField] private GeometryMaterialOptions _options;
 
 		public override void SetProperties(ModifierProperties properties)
 		{
@@ -39,24 +38,22 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 			if (_options.style == StyleTypes.Custom)
 			{
-				for (int i = 0; i < min; i++)
-				{
-					mats[i] = _options.customStyleOptions.materials[i].Materials[UnityEngine.Random.Range(0, _options.customStyleOptions.materials[i].Materials.Length)];
-				}
+				for (var i = 0; i < min; i++)
+					mats[i] = _options.customStyleOptions.materials[i]
+						.Materials[Random.Range(0, _options.customStyleOptions.materials[i].Materials.Length)];
 			}
 			else if (_options.style == StyleTypes.Satellite)
 			{
-				for (int i = 0; i < min; i++)
-				{
-					mats[i] = Instantiate(_options.materials[i].Materials[UnityEngine.Random.Range(0, _options.materials[i].Materials.Length)]);
-				}
+				for (var i = 0; i < min; i++)
+					mats[i] = Instantiate(_options.materials[i]
+						.Materials[Random.Range(0, _options.materials[i].Materials.Length)]);
 
 				mats[0].mainTexture = tile.GetRasterData();
 				mats[0].mainTextureScale = new Vector2(1f, 1f);
 			}
 			else
 			{
-				float renderMode = 0.0f;
+				var renderMode = 0.0f;
 				switch (_options.style)
 				{
 					case StyleTypes.Light:
@@ -68,35 +65,30 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					case StyleTypes.Color:
 						renderMode = GetRenderMode(_options.colorStyleColor.a);
 						break;
-					default:
-						break;
 				}
-				for (int i = 0; i < min; i++)
+
+				for (var i = 0; i < min; i++)
 				{
-					mats[i] = _options.materials[i].Materials[UnityEngine.Random.Range(0, _options.materials[i].Materials.Length)];
+					mats[i] = _options.materials[i].Materials[Random.Range(0, _options.materials[i].Materials.Length)];
 					mats[i].SetFloat("_Mode", renderMode);
 				}
 			}
+
 			ve.MeshRenderer.materials = mats;
 		}
 
 		public override void OnPoolItem(VectorEntity vectorEntity)
 		{
 			if (_options.style == StyleTypes.Satellite)
-			{
 				foreach (var material in vectorEntity.MeshRenderer.sharedMaterials)
-				{
 					DestroyImmediate(material, true);
-				}
-			}
 		}
 	}
 
 	[Serializable]
 	public class MaterialList
 	{
-		[SerializeField]
-		public Material[] Materials;
+		[SerializeField] public Material[] Materials;
 
 		public MaterialList()
 		{

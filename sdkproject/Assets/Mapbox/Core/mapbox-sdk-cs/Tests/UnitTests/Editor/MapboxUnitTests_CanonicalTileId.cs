@@ -4,12 +4,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Map;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-	using Mapbox.Map;
-	using Mapbox.Utils;
-	using NUnit.Framework;
-
 	[TestFixture]
 	internal class CanonicalTileIdTest
 	{

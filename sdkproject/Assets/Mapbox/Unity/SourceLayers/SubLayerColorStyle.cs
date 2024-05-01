@@ -1,10 +1,11 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using UnityEngine;
+﻿using UnityEngine;
 
+namespace Mapbox.Unity.Map
+{
 	public class SubLayerColorStyle : ISubLayerColorStyle
 	{
-		private GeometryMaterialOptions _materialOptions;
+		private readonly GeometryMaterialOptions _materialOptions;
+
 		public SubLayerColorStyle(GeometryMaterialOptions materialOptions)
 		{
 			_materialOptions = materialOptions;
@@ -12,10 +13,7 @@
 
 		public Color FeatureColor
 		{
-			get
-			{
-				return _materialOptions.colorStyleColor;
-			}
+			get => _materialOptions.colorStyleColor;
 
 			set
 			{
@@ -39,7 +37,4 @@
 			_materialOptions.HasChanged = true;
 		}
 	}
-
 }
-
-

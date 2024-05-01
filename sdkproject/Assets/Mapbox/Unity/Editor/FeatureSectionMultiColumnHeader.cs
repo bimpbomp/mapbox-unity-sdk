@@ -1,19 +1,19 @@
-﻿using System;
+﻿using UnityEditor;
+using UnityEditor.IMGUI.Controls;
+using UnityEngine;
+
 namespace Mapbox.Editor
 {
-	using UnityEditor;
-	using UnityEditor.IMGUI.Controls;
-	using UnityEngine;
 	internal class FeatureSectionMultiColumnHeader : MultiColumnHeader
 	{
-		Mode m_Mode;
-
 		public enum Mode
 		{
 			LargeHeader,
 			DefaultHeader,
 			MinimumHeaderWithoutSorting
 		}
+
+		private Mode m_Mode;
 
 		public FeatureSectionMultiColumnHeader(MultiColumnHeaderState state)
 			: base(state)
@@ -23,10 +23,7 @@ namespace Mapbox.Editor
 
 		public Mode mode
 		{
-			get
-			{
-				return m_Mode;
-			}
+			get => m_Mode;
 			set
 			{
 				m_Mode = value;
@@ -55,7 +52,6 @@ namespace Mapbox.Editor
 
 			// Add additional info for large header
 			if (mode == Mode.LargeHeader)
-			{
 				// Show example overlay stuff on some of the columns
 				if (columnIndex > 2)
 				{
@@ -65,7 +61,6 @@ namespace Mapbox.Editor
 					GUI.Label(headerRect, 36 + columnIndex + "%", EditorStyles.largeLabel);
 					EditorStyles.largeLabel.alignment = oldAlignment;
 				}
-			}
 		}
 	}
 }

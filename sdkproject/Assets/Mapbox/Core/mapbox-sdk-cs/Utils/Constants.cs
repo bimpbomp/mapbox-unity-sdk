@@ -25,6 +25,5 @@ namespace Mapbox.Utils
 
 		/// <summary> Epsilon to comapre floating point numbers</summary>
 		public const float EpsilonFloatingPoint = 1E-05f;
-
 	}
 }

@@ -1,51 +1,37 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System;
-	using System.Collections.Generic;
-	using Mapbox.Json;
+﻿using Mapbox.Json;
 
+namespace Mapbox.Unity.Map
+{
 	public class TileStats
 	{
-		[JsonProperty("account")]
-		public string account;
+		[JsonProperty("account")] public string account;
 
-		[JsonProperty("tilesetid")]
-		public string tilesetid;
+		[JsonProperty("layers")] public LayerStats[] layers;
 
-		[JsonProperty("layers")]
-		public LayerStats[] layers;
+		[JsonProperty("tilesetid")] public string tilesetid;
 	}
 
 	public class LayerStats
 	{
-		[JsonProperty("account")]
-		public string account;
+		[JsonProperty("account")] public string account;
 
-		[JsonProperty("tilesetid")]
-		public string tilesetid;
+		[JsonProperty("attributes")] public AttributeStats[] attributes;
 
-		[JsonProperty("layer")]
-		public string layer;
+		[JsonProperty("count")] public string count;
 
-		[JsonProperty("geometry")]
-		public string geometry;
+		[JsonProperty("geometry")] public string geometry;
 
-		[JsonProperty("count")]
-		public string count;
+		[JsonProperty("layer")] public string layer;
 
-		[JsonProperty("attributes")]
-		public AttributeStats[] attributes;
+		[JsonProperty("tilesetid")] public string tilesetid;
 	}
 
 	public class AttributeStats
 	{
-		[JsonProperty("attribute")]
-		public string attribute;
+		[JsonProperty("attribute")] public string attribute;
 
-		[JsonProperty("type")]
-		public string type;
+		[JsonProperty("type")] public string type;
 
-		[JsonProperty("values")]
-		public string[] values;
+		[JsonProperty("values")] public string[] values;
 	}
 }

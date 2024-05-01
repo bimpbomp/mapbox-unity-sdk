@@ -1,80 +1,64 @@
+using System;
+using System.Collections.Generic;
+using Mapbox.Unity.Map;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
+using Random = UnityEngine.Random;
+
 namespace Mapbox.Unity.MeshGeneration.Modifiers
 {
-	using System.Collections.Generic;
-	using UnityEngine;
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Mapbox.Unity.Map;
-	using System;
-
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Textured Side Wall Modifier")]
 	public class TextureSideWallModifier : MeshModifier
 	{
-		#region ModifierOptions
-
-		private float _scaledFirstFloorHeight = 0;
-
-		private float _scaledTopFloorHeight = 0;
-
-		private float _scaledPreferredWallLength;
-		[SerializeField] private bool _centerSegments = true;
-		[SerializeField] private bool _separateSubmesh = true;
-
-		#endregion
-
-		float currentWallLength = 0;
-		Vector3 start = Constants.Math.Vector3Zero;
-		Vector3 wallDirection = Constants.Math.Vector3Zero;
-
-		Vector3 wallSegmentFirstVertex;
-		Vector3 wallSegmentSecondVertex;
-		Vector3 wallSegmentDirection;
-		float wallSegmentLength;
+		private int _counter;
 
 		private AtlasEntity _currentFacade;
+		private float _currentMidHeight;
 		private Rect _currentTextureRect;
+		private float _leftOverColumnLength;
+		private float _midUvInCurrentStep;
+		private float _minWallLength;
+		private readonly float _narrowWallWidthDelta = 0.01f;
 
-		private float finalFirstHeight;
-		private float finalTopHeight;
-		private float finalMidHeight;
-		private float finalLeftOverRowHeight;
+		private GeometryExtrusionWithAtlasOptions _options;
+		private float _scale = 1f;
 		private float _scaledFloorHeight;
-		private int triIndex;
-		private Vector3 wallNormal;
-		private List<int> wallTriangles;
+		private readonly float _shortRowHeightDelta = 0.015f;
+		private float _singleColumnLength;
+		private float _singleFloorHeight;
+		private readonly float _wallSizeEpsilon = 0.99f;
 		private float columnScaleRatio;
-		private float rightOfEdgeUv;
+
+		private float currentWallLength;
 
 		private float currentY1;
 		private float currentY2;
-		private float _wallSizeEpsilon = 0.99f;
-		private float _narrowWallWidthDelta = 0.01f;
-		private float _shortRowHeightDelta = 0.015f;
 
-		GeometryExtrusionWithAtlasOptions _options;
-		private int _counter = 0;
-		private float height = 0.0f;
-		private float _scale = 1f;
-		private float _minWallLength;
-		private float _singleFloorHeight;
-		private float _currentMidHeight;
-		private float _midUvInCurrentStep;
-		private float _singleColumnLength;
-		private float _leftOverColumnLength;
+		private float finalFirstHeight;
+		private float finalLeftOverRowHeight;
+		private float finalMidHeight;
+		private float finalTopHeight;
+		private float height;
+		private float rightOfEdgeUv;
+		private Vector3 start = Constants.Math.Vector3Zero;
+		private int triIndex;
+		private Vector3 wallDirection = Constants.Math.Vector3Zero;
+		private Vector3 wallNormal;
+		private Vector3 wallSegmentDirection;
+
+		private Vector3 wallSegmentFirstVertex;
+		private float wallSegmentLength;
+		private Vector3 wallSegmentSecondVertex;
+		private List<int> wallTriangles;
 
 		public override void SetProperties(ModifierProperties properties)
 		{
 			if (properties is GeometryExtrusionWithAtlasOptions)
-			{
 				_options = (GeometryExtrusionWithAtlasOptions)properties;
-			}
 			else if (properties is GeometryExtrusionOptions)
-			{
 				_options = ((GeometryExtrusionOptions)properties).ToGeometryExtrusionWithAtlasOptions();
-			}
 			else if (properties is UVModifierOptions)
-			{
 				_options = ((UVModifierOptions)properties).ToGeometryExtrusionWithAtlasOptions();
-			}
 		}
 
 		public override void UnbindProperties()
@@ -85,16 +69,16 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 		public override void Initialize()
 		{
 			base.Initialize();
-			foreach (var atlasEntity in _options.atlasInfo.Textures)
-			{
-				atlasEntity.CalculateParameters();
-			}
+			foreach (var atlasEntity in _options.atlasInfo.Textures) atlasEntity.CalculateParameters();
 		}
 
-		public override void UpdateModifier(object sender, System.EventArgs layerArgs)
+		public override void UpdateModifier(object sender, EventArgs layerArgs)
 		{
 			SetProperties((ModifierProperties)sender);
-			NotifyUpdateModifier(new VectorLayerUpdateArgs { property = sender as MapboxDataProperty, modifier = this });
+			NotifyUpdateModifier(new VectorLayerUpdateArgs
+			{
+				property = sender as MapboxDataProperty, modifier = this
+			});
 		}
 
 		public override void Run(VectorFeatureUnity feature, MeshData md, UnityTile tile = null)
@@ -107,12 +91,12 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 
 			//facade texture to decorate this building
 			_currentFacade =
-				_options.atlasInfo.Textures[UnityEngine.Random.Range(0, _options.atlasInfo.Textures.Count)];
+				_options.atlasInfo.Textures[Random.Range(0, _options.atlasInfo.Textures.Count)];
 			//rect is a struct so we're caching this
 			_currentTextureRect = _currentFacade.TextureRect;
 
 			//this can be moved to initialize or in an if clause if you're sure all your tiles will be same level/scale
-			_singleFloorHeight = (tile.TileScale * _currentFacade.FloorHeight) / _currentFacade.MidFloorCount;
+			_singleFloorHeight = tile.TileScale * _currentFacade.FloorHeight / _currentFacade.MidFloorCount;
 			_scaledFirstFloorHeight = tile.TileScale * _currentFacade.FirstFloorHeight;
 			_scaledTopFloorHeight = tile.TileScale * _currentFacade.TopFloorHeight;
 			_scaledPreferredWallLength = tile.TileScale * _currentFacade.PreferredEdgeSectionLength;
@@ -127,22 +111,19 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 			QueryHeight(feature, md, tile, out maxHeight, out minHeight);
 			maxHeight = maxHeight * _options.extrusionScaleFactor * _scale;
 			minHeight = minHeight * _options.extrusionScaleFactor * _scale;
-			height = (maxHeight - minHeight);
+			height = maxHeight - minHeight;
 
 			//we cann GenerateRoofMesh even if extrusion type is sidewall-only
 			//it pushes the vertices to building height, then we clear top polygon triangles
 			//to remove roof.
 			GenerateRoofMesh(md, minHeight, maxHeight);
-			if (_options.extrusionGeometryType == ExtrusionGeometryType.SideOnly)
-			{
-				md.Triangles[0].Clear();
-			}
+			if (_options.extrusionGeometryType == ExtrusionGeometryType.SideOnly) md.Triangles[0].Clear();
 
 			if (_options.extrusionGeometryType != ExtrusionGeometryType.RoofOnly)
 			{
 				//limiting section heights, first floor gets priority, then we draw top floor, then mid if we still have space
 				finalFirstHeight = Mathf.Min(height, _scaledFirstFloorHeight);
-				finalTopHeight = (height - finalFirstHeight) < _scaledTopFloorHeight ? 0 : _scaledTopFloorHeight;
+				finalTopHeight = height - finalFirstHeight < _scaledTopFloorHeight ? 0 : _scaledTopFloorHeight;
 				finalMidHeight = Mathf.Max(0, height - (finalFirstHeight + finalTopHeight));
 				wallTriangles = new List<int>();
 
@@ -163,7 +144,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					finalLeftOverRowHeight = finalTopHeight;
 				}
 
-				for (int i = 0; i < md.Edges.Count; i += 2)
+				for (var i = 0; i < md.Edges.Count; i += 2)
 				{
 					var v1 = md.Vertices[md.Edges[i]];
 					var v2 = md.Vertices[md.Edges[i + 1]];
@@ -180,7 +161,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					{
 						//save left,right vertices and wall length
 						wallSegmentFirstVertex = start;
-						wallSegmentLength = (_leftOverColumnLength / 2);
+						wallSegmentLength = _leftOverColumnLength / 2;
 						start += wallSegmentDirection * wallSegmentLength;
 						wallSegmentSecondVertex = start;
 
@@ -199,7 +180,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 						start += wallSegmentDirection * wallSegmentLength;
 						wallSegmentSecondVertex = start;
 
-						currentWallLength -= (stepRatio * _scaledPreferredWallLength);
+						currentWallLength -= stepRatio * _scaledPreferredWallLength;
 						CreateWall(md);
 					}
 
@@ -241,10 +222,10 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				_currentTextureRect.size.x *
 				columnScaleRatio; // Math.Min(1, ((float)(Math.Floor(columnScaleRatio * _currentFacade.ColumnCount) + 1) / _currentFacade.ColumnCount));
 
-			_minWallLength = (_scaledPreferredWallLength / _currentFacade.ColumnCount) * _wallSizeEpsilon;
+			_minWallLength = _scaledPreferredWallLength / _currentFacade.ColumnCount * _wallSizeEpsilon;
 			//common for all top/mid/bottom segments
 			wallNormal = new Vector3(-(wallSegmentFirstVertex.z - wallSegmentSecondVertex.z), 0,
-				(wallSegmentFirstVertex.x - wallSegmentSecondVertex.x)).normalized;
+				wallSegmentFirstVertex.x - wallSegmentSecondVertex.x).normalized;
 			//height of the left/right edges
 			currentY1 = wallSegmentFirstVertex.y;
 			currentY2 = wallSegmentSecondVertex.y;
@@ -320,15 +301,15 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				//first part is the number of floors fitting current wall segment. You can fit max of "row count in mid". Or if wall
 				//is smaller and it can only fit i.e. 3 floors instead of 5; we use 3/5 of the mid section texture as well.
 				_midUvInCurrentStep =
-					((float)Math.Min(_currentFacade.MidFloorCount,
-						Math.Round(_currentMidHeight / _singleFloorHeight))) / _currentFacade.MidFloorCount;
+					(float)Math.Min(_currentFacade.MidFloorCount,
+						Math.Round(_currentMidHeight / _singleFloorHeight)) / _currentFacade.MidFloorCount;
 
 				//top two vertices
 				md.Vertices.Add(new Vector3(wallSegmentFirstVertex.x, currentY1, wallSegmentFirstVertex.z));
 				md.Vertices.Add(new Vector3(wallSegmentSecondVertex.x, currentY2, wallSegmentSecondVertex.z));
 				//move offsets bottom
-				currentY1 -= (_scaledFloorHeight * _midUvInCurrentStep);
-				currentY2 -= (_scaledFloorHeight * _midUvInCurrentStep);
+				currentY1 -= _scaledFloorHeight * _midUvInCurrentStep;
+				currentY2 -= _scaledFloorHeight * _midUvInCurrentStep;
 				//bottom two vertices
 				md.Vertices.Add(new Vector3(wallSegmentFirstVertex.x, currentY1, wallSegmentFirstVertex.z));
 				md.Vertices.Add(new Vector3(wallSegmentSecondVertex.x, currentY2, wallSegmentSecondVertex.z));
@@ -373,7 +354,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				wallTriangles.Add(triIndex + 2);
 
 				triIndex += 4;
-				_currentMidHeight -= Math.Max(0.1f, (_scaledFloorHeight * _midUvInCurrentStep));
+				_currentMidHeight -= Math.Max(0.1f, _scaledFloorHeight * _midUvInCurrentStep);
 			}
 		}
 
@@ -488,50 +469,38 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				case ExtrusionType.None:
 					break;
 				case ExtrusionType.PropertyHeight:
-					for (int i = 0; i < _counter; i++)
-					{
+					for (var i = 0; i < _counter; i++)
 						md.Vertices[i] = new Vector3(md.Vertices[i].x, md.Vertices[i].y + maxHeight,
 							md.Vertices[i].z);
-					}
 
 					break;
 				case ExtrusionType.MinHeight:
-					{
-						var minmax = MinMaxPair.GetMinMaxHeight(md.Vertices);
-						for (int i = 0; i < _counter; i++)
-						{
-							md.Vertices[i] = new Vector3(md.Vertices[i].x, minmax.min + maxHeight, md.Vertices[i].z);
-						}
-					}
+				{
+					var minmax = MinMaxPair.GetMinMaxHeight(md.Vertices);
+					for (var i = 0; i < _counter; i++)
+						md.Vertices[i] = new Vector3(md.Vertices[i].x, minmax.min + maxHeight, md.Vertices[i].z);
+				}
 					break;
 				case ExtrusionType.MaxHeight:
-					{
-						var minmax = MinMaxPair.GetMinMaxHeight(md.Vertices);
-						for (int i = 0; i < _counter; i++)
-						{
-							md.Vertices[i] = new Vector3(md.Vertices[i].x, minmax.max + maxHeight, md.Vertices[i].z);
-						}
+				{
+					var minmax = MinMaxPair.GetMinMaxHeight(md.Vertices);
+					for (var i = 0; i < _counter; i++)
+						md.Vertices[i] = new Vector3(md.Vertices[i].x, minmax.max + maxHeight, md.Vertices[i].z);
 
-						height += minmax.max - minmax.min;
-					}
+					height += minmax.max - minmax.min;
+				}
 					break;
 				case ExtrusionType.RangeHeight:
-					for (int i = 0; i < _counter; i++)
-					{
+					for (var i = 0; i < _counter; i++)
 						md.Vertices[i] = new Vector3(md.Vertices[i].x, md.Vertices[i].y + maxHeight,
 							md.Vertices[i].z);
-					}
 
 					break;
 				case ExtrusionType.AbsoluteHeight:
-					for (int i = 0; i < _counter; i++)
-					{
+					for (var i = 0; i < _counter; i++)
 						md.Vertices[i] = new Vector3(md.Vertices[i].x, md.Vertices[i].y + maxHeight,
 							md.Vertices[i].z);
-					}
 
-					break;
-				default:
 					break;
 			}
 		}
@@ -553,9 +522,7 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 					{
 						maxHeight = Convert.ToSingle(feature.Properties[_options.propertyName]);
 						if (feature.Properties.ContainsKey("min_height"))
-						{
 							minHeight = Convert.ToSingle(feature.Properties["min_height"]);
-						}
 					}
 
 					break;
@@ -583,9 +550,19 @@ namespace Mapbox.Unity.MeshGeneration.Modifiers
 				case ExtrusionType.AbsoluteHeight:
 					maxHeight = _options.maximumHeight;
 					break;
-				default:
-					break;
 			}
 		}
+
+		#region ModifierOptions
+
+		private float _scaledFirstFloorHeight;
+
+		private float _scaledTopFloorHeight;
+
+		private float _scaledPreferredWallLength;
+		[SerializeField] private bool _centerSegments = true;
+		[SerializeField] private bool _separateSubmesh = true;
+
+		#endregion
 	}
 }

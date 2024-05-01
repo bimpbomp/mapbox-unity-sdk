@@ -7,7 +7,7 @@ namespace Mapbox.Unity.Map.Strategies
 	{
 		public void SetUpScaling(AbstractMap map)
 		{
-			var scaleFactor = Mathf.Pow(2, (map.AbsoluteZoom - map.InitialZoom));
+			var scaleFactor = Mathf.Pow(2, map.AbsoluteZoom - map.InitialZoom);
 			map.SetWorldRelativeScale(scaleFactor * Mathf.Cos(Mathf.Deg2Rad * (float)map.CenterLatitudeLongitude.x));
 		}
 	}

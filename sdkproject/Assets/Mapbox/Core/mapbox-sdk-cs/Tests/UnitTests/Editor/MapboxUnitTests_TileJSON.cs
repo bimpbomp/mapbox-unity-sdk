@@ -5,45 +5,38 @@
 //-----------------------------------------------------------------------
 
 // TODO: figure out how run tests outside of Unity with .NET framework, something like '#if !UNITY'
+
+using System.Collections;
+using Mapbox.Platform;
+using Mapbox.Platform.TilesetTileJSON;
+using Mapbox.Unity;
+using NUnit.Framework;
+using UnityEngine.TestTools;
+
 #if UNITY_5_6_OR_NEWER
 
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-
-	using Mapbox.Platform;
-	using NUnit.Framework;
-	using UnityEngine.TestTools;
-	using System.Collections;
-	using Mapbox.Platform.TilesetTileJSON;
-
-
 	[TestFixture]
 	internal class TileJSONTest
 	{
-
-
-
 		[UnityTest]
 		public IEnumerator MapboxStreets()
 		{
-			string id = "mapbox.mapbox-streets-v7";
-			int minZoom = 0;
-			int maxZoom = 16;
+			var id = "mapbox.mapbox-streets-v7";
+			var minZoom = 0;
+			var maxZoom = 16;
 
 			TileJSONResponse response = null;
 
-			Unity.MapboxAccess.Instance.TileJSON.Get(
+			MapboxAccess.Instance.TileJSON.Get(
 				id
-				, (TileJSONResponse tjr) =>
-				{
-					response = tjr;
-				}
+				, tjr => { response = tjr; }
 			);
 
 
-			IEnumerator enumerator = ((FileSource)Unity.MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = ((FileSource)MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 
 			testsCommonToVectorAndRasterTilesets(response, id, minZoom, maxZoom);
 			testsForVectorTilesets(response);
@@ -53,23 +46,20 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		[UnityTest]
 		public IEnumerator ConcatenatedVectorTilesets()
 		{
-			string id = "mapbox.mapbox-traffic-v1,mapbox.mapbox-streets-v7";
-			int minZoom = 0;
-			int maxZoom = 16;
+			var id = "mapbox.mapbox-traffic-v1,mapbox.mapbox-streets-v7";
+			var minZoom = 0;
+			var maxZoom = 16;
 
 			TileJSONResponse response = null;
 
-			Unity.MapboxAccess.Instance.TileJSON.Get(
+			MapboxAccess.Instance.TileJSON.Get(
 				id
-				, (TileJSONResponse tjr) =>
-				{
-					response = tjr;
-				}
+				, tjr => { response = tjr; }
 			);
 
 
-			IEnumerator enumerator = ((FileSource)Unity.MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = ((FileSource)MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 
 			testsCommonToVectorAndRasterTilesets(
 				response
@@ -86,23 +76,20 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		[UnityTest]
 		public IEnumerator MapboxSatellite()
 		{
-			string id = "mapbox.satellite";
-			int minZoom = 0;
-			int maxZoom = 22;
+			var id = "mapbox.satellite";
+			var minZoom = 0;
+			var maxZoom = 22;
 
 			TileJSONResponse response = null;
 
-			Unity.MapboxAccess.Instance.TileJSON.Get(
+			MapboxAccess.Instance.TileJSON.Get(
 				id
-				, (TileJSONResponse tjr) =>
-				{
-					response = tjr;
-				}
+				, tjr => { response = tjr; }
 			);
 
 
-			IEnumerator enumerator = ((FileSource)Unity.MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = ((FileSource)MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 
 			testsCommonToVectorAndRasterTilesets(response, id, minZoom, maxZoom, boundsSouth: -85, boundsNorth: 85);
 		}
@@ -111,23 +98,20 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		[UnityTest]
 		public IEnumerator MapboxEmerald()
 		{
-			string id = "mapbox.emerald";
-			int minZoom = 0;
-			int maxZoom = 22;
+			var id = "mapbox.emerald";
+			var minZoom = 0;
+			var maxZoom = 22;
 
 			TileJSONResponse response = null;
 
-			Unity.MapboxAccess.Instance.TileJSON.Get(
+			MapboxAccess.Instance.TileJSON.Get(
 				id
-				, (TileJSONResponse tjr) =>
-				{
-					response = tjr;
-				}
+				, tjr => { response = tjr; }
 			);
 
 
-			IEnumerator enumerator = ((FileSource)Unity.MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = ((FileSource)MapboxAccess.Instance.TileJSON.FileSource).WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 
 			testsCommonToVectorAndRasterTilesets(response, id, minZoom, maxZoom);
 
@@ -135,13 +119,12 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		}
 
 
-
 		private void testsForVectorTilesets(TileJSONResponse response)
 		{
 			Assert.IsNotNull(response.VectorLayers, "'VectorLayers' not set properly");
 			Assert.GreaterOrEqual(response.VectorLayers.Length, 1, "Not enough 'VectorLayers'");
 
-			TileJSONObjectVectorLayer vl1 = response.VectorLayers[0];
+			var vl1 = response.VectorLayers[0];
 			Assert.IsNotNull(vl1.Fields, "VectorLayer fields not parsed properly");
 			Assert.GreaterOrEqual(vl1.Fields.Count, 1, "Not enough vector layer fields");
 			Assert.IsNotEmpty(vl1.Id, "'Id' of vector layer not parsed properly");
@@ -192,6 +175,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 				Assert.IsNotEmpty(response.Id, "'Id' is empty");
 				Assert.AreEqual(id, response.Id, "'Id' not set properly");
 			}
+
 			Assert.AreEqual(minZoom, response.MinZoom, "'MinZoom' not set properly");
 			Assert.AreEqual(maxZoom, response.MaxZoom, "'MaxZoom' not set properly");
 
@@ -211,14 +195,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			Assert.GreaterOrEqual(response.Tiles.Length, 1, "Not enough 'Tiles'");
 
 			// concatenated tilesets don't report 'webpage'
-			if (!id.Contains(","))
-			{
-				Assert.IsNotEmpty(response.WebPage, "'WebPage' not set properly");
-			}
+			if (!id.Contains(",")) Assert.IsNotEmpty(response.WebPage, "'WebPage' not set properly");
 		}
-
-
-
 	}
 }
 

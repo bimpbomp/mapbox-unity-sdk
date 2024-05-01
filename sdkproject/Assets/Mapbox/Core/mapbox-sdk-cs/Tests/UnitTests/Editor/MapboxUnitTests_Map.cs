@@ -5,15 +5,17 @@
 //-----------------------------------------------------------------------
 
 // TODO: figure out how run tests outside of Unity with .NET framework, something like '#if !UNITY'
+
+using Mapbox.Map;
+using Mapbox.Platform;
+using Mapbox.Unity;
+using Mapbox.Utils;
+using NUnit.Framework;
+
 #if UNITY_5_6_OR_NEWER
 
 namespace Mapbox.MapboxSdkCs.UnitTest
 {
-
-	using Mapbox.Map;
-	using Mapbox.Platform;
-	using Mapbox.Utils;
-	using NUnit.Framework;
 #if UNITY_5_6_OR_NEWER
 	using System.Collections;
 	using UnityEngine.TestTools;
@@ -23,21 +25,19 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 	[TestFixture]
 	internal class MapTest
 	{
-
-		private FileSource _fs;
-
-
 		[SetUp]
 		public void SetUp()
 		{
 #if UNITY_5_6_OR_NEWER
-			_fs = new FileSource(Unity.MapboxAccess.Instance.Configuration.GetMapsSkuToken, Unity.MapboxAccess.Instance.Configuration.AccessToken);
+			_fs = new FileSource(MapboxAccess.Instance.Configuration.GetMapsSkuToken,
+				MapboxAccess.Instance.Configuration.AccessToken);
 #else
 			// when run outside of Unity FileSource gets the access token from environment variable 'MAPBOX_ACCESS_TOKEN'
 			_fs = new FileSource();
 #endif
 		}
 
+		private FileSource _fs;
 
 
 #if UNITY_5_6_OR_NEWER
@@ -48,7 +48,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		public void World()
 #endif
 		{
-			var map = new Map<VectorTile>(_fs);
+			var map = new Map<Map.VectorTile>(_fs);
 
 			map.Vector2dBounds = Vector2dBounds.World();
 			map.Zoom = 3;
@@ -58,8 +58,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			map.Update();
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -68,7 +68,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 			map.Unsubscribe(mapObserver);
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -89,8 +88,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			map.Update();
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -100,7 +99,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 			map.Unsubscribe(mapObserver);
 		}
-
 
 
 #if UNITY_5_6_OR_NEWER
@@ -122,8 +120,8 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			map.Update();
 
 #if UNITY_5_6_OR_NEWER
-			IEnumerator enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			var enumerator = _fs.WaitForAllRequests();
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -135,7 +133,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 #if UNITY_5_6_OR_NEWER
 			enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -147,7 +145,7 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 #if UNITY_5_6_OR_NEWER
 			enumerator = _fs.WaitForAllRequests();
-			while (enumerator.MoveNext()) { yield return null; }
+			while (enumerator.MoveNext()) yield return null;
 #else
 			_fs.WaitForAllRequests();
 #endif
@@ -159,7 +157,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 
 			map.Unsubscribe(mapObserver);
 		}
-
 
 
 		[Test]
@@ -177,7 +174,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 		}
 
 
-
 		[Test]
 		public void TileMax()
 		{
@@ -192,7 +188,6 @@ namespace Mapbox.MapboxSdkCs.UnitTest
 			map.Update();
 			Assert.AreEqual(16, map.Tiles.Count);
 		}
-
 
 
 		[Test]

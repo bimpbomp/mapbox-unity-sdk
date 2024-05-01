@@ -8,25 +8,28 @@ using UnityEngine.Events;
 namespace Mapbox.Unity.Map.TileProviders
 {
 	/// <summary>
-	/// Monobehavior Script to handle TileErrors.
-	/// There's an OnTileError event on AbstractMapVisualizer, AbstractTileFactory and UnityTile classes that one can subscribe to to listen to tile errors
+	///     Monobehavior Script to handle TileErrors.
+	///     There's an OnTileError event on AbstractMapVisualizer, AbstractTileFactory and UnityTile classes that one can
+	///     subscribe to to listen to tile errors
 	/// </summary>
 	public class TileErrorHandler : MonoBehaviour
 	{
+		[SerializeField] private AbstractMap _mapInstance;
 
-		[SerializeField]
-		private AbstractMap _mapInstance;
 		public TileErrorEvent OnTileError;
 
 
 		protected virtual void OnEnable()
 		{
-			if (_mapInstance == null)
-			{
-				_mapInstance = GetComponent<AbstractMap>();
-			}
+			if (_mapInstance == null) _mapInstance = GetComponent<AbstractMap>();
 
 			_mapInstance.OnInitialized += MapInstance_OnInitialized;
+		}
+
+
+		protected virtual void OnDisable()
+		{
+			_mapInstance.MapVisualizer.OnTileError -= _OnTileErrorHandler;
 		}
 
 
@@ -52,19 +55,12 @@ namespace Mapbox.Unity.Map.TileProviders
 					e.Exceptions[0].Message.Contains("Request aborted")
 					|| e.Exceptions[0].Message.Equals("Unable to write data")
 				)
-				{
 					Debug.LogWarning(printMessage(e.Exceptions, e));
-				}
 				else
-				{
 					Debug.LogError(printMessage(e.Exceptions, e));
-				}
 			}
 
-			if (OnTileError != null)
-			{
-				OnTileError.Invoke(e);
-			}
+			if (OnTileError != null) OnTileError.Invoke(e);
 		}
 
 
@@ -79,16 +75,11 @@ namespace Mapbox.Unity.Map.TileProviders
 				, e.TileType
 			);
 		}
-
-
-		protected virtual void OnDisable()
-		{
-			_mapInstance.MapVisualizer.OnTileError -= _OnTileErrorHandler;
-		}
 	}
 
 
-	[System.Serializable]
-	public class TileErrorEvent : UnityEvent<TileErrorEventArgs> { }
-
+	[Serializable]
+	public class TileErrorEvent : UnityEvent<TileErrorEventArgs>
+	{
+	}
 }

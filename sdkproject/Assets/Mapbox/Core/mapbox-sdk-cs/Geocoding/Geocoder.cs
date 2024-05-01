@@ -4,17 +4,20 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using System.Text;
+using Mapbox.Json;
+using Mapbox.Platform;
+using Mapbox.Utils.JsonConverters;
+
 namespace Mapbox.Geocoding
 {
-	using System;
-	using System.Text;
-	using Mapbox.Json;
-	using Mapbox.Platform;
-	using Mapbox.Utils.JsonConverters;
-
 	/// <summary>
-	///     Wrapper around the <see href="https://www.mapbox.com/api-documentation/search/#geocoding">
-	///     Mapbox Geocoding API</see>. The Geocoder does two things: geocoding and reverse geocoding.
+	///     Wrapper around the
+	///     <see href="https://www.mapbox.com/api-documentation/search/#geocoding">
+	///         Mapbox Geocoding API
+	///     </see>
+	///     . The Geocoder does two things: geocoding and reverse geocoding.
 	/// </summary>
 	public sealed class Geocoder
 	{
@@ -38,9 +41,9 @@ namespace Mapbox.Geocoding
 		/// </returns>
 		public IAsyncRequest Geocode<T>(GeocodeResource<T> geocode, Action<ReverseGeocodeResponse> callback)
 		{
-			return this.fileSource.Request(
+			return fileSource.Request(
 				geocode.GetUrl(),
-				(Response response) =>
+				response =>
 				{
 					var str = Encoding.UTF8.GetString(response.Data);
 
@@ -61,9 +64,9 @@ namespace Mapbox.Geocoding
 		/// </returns>
 		public IAsyncRequest Geocode<T>(GeocodeResource<T> geocode, Action<ForwardGeocodeResponse> callback)
 		{
-			return this.fileSource.Request(
+			return fileSource.Request(
 				geocode.GetUrl(),
-				(Response response) =>
+				response =>
 				{
 					var str = Encoding.UTF8.GetString(response.Data);
 
@@ -74,10 +77,10 @@ namespace Mapbox.Geocoding
 		}
 
 		/// <summary>
-		/// Deserialize the geocode response string into a <see cref="GeocodeResponse"/>.
+		///     Deserialize the geocode response string into a <see cref="GeocodeResponse" />.
 		/// </summary>
 		/// <param name="str">JSON String.</param>
-		/// <returns>A <see cref="GeocodeResponse"/>.</returns>
+		/// <returns>A <see cref="GeocodeResponse" />.</returns>
 		/// <typeparam name="T">Forward or reverse geocode. </typeparam>
 		public T Deserialize<T>(string str)
 		{

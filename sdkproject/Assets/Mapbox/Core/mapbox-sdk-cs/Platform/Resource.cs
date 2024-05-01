@@ -4,13 +4,12 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Mapbox.Platform
 {
-	using System;
-	using System.Collections;
-	using System.Collections.Generic;
-	using System.Collections.Specialized;
-	using System.Linq;
 #if UNITY_IOS
 	using UnityEngine;
 #endif
@@ -28,7 +27,7 @@ namespace Mapbox.Platform
 		/// <summary> Encodes a URI with a querystring. </summary>
 		/// <param name="values"> Querystring values. </param>
 		/// <returns> Encoded URL. </returns>
-		protected static String EncodeQueryString(IEnumerable<KeyValuePair<string, string>> values)
+		protected static string EncodeQueryString(IEnumerable<KeyValuePair<string, string>> values)
 		{
 			if (values != null)
 			{
@@ -44,20 +43,15 @@ namespace Mapbox.Platform
 									let v = WWW.EscapeURL(p.Value)
 #endif
 #else
-									let k = Uri.EscapeDataString(p.Key.Trim())
-									let v = Uri.EscapeDataString(p.Value)
+					let k = Uri.EscapeDataString(p.Key.Trim())
+					let v = Uri.EscapeDataString(p.Value)
 #endif
-									orderby k
-									select string.IsNullOrEmpty(v) ? k : string.Format("{0}={1}", k, v);
+					orderby k
+					select string.IsNullOrEmpty(v) ? k : string.Format("{0}={1}", k, v);
 				if (encodedValues.Count() == 0)
-				{
 					return string.Empty;
-				}
-				else
-				{
-					return "?" + string.Join(
-						"&", encodedValues.ToArray());
-				}
+				return "?" + string.Join(
+					"&", encodedValues.ToArray());
 			}
 
 			return string.Empty;

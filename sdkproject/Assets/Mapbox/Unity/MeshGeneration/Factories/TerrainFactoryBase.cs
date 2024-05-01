@@ -1,37 +1,23 @@
-﻿using Mapbox.Unity.MeshGeneration.Factories;
-using System.Collections;
-using UnityEngine;
-using Mapbox.Unity.MeshGeneration.Data;
+﻿using Mapbox.Map;
 using Mapbox.Unity.Map;
-using Mapbox.Map;
+using Mapbox.Unity.MeshGeneration.Data;
 using Mapbox.Unity.MeshGeneration.Enums;
 using Mapbox.Unity.MeshGeneration.Factories.TerrainStrategies;
-using System;
-using System.Collections.Generic;
+using UnityEngine;
 
 namespace Mapbox.Unity.MeshGeneration.Factories
 {
 	public class TerrainFactoryBase : AbstractTileFactory
 	{
-		public TerrainStrategy Strategy;
-		[SerializeField]
-		protected ElevationLayerProperties _elevationOptions = new ElevationLayerProperties();
+		[SerializeField] protected ElevationLayerProperties _elevationOptions = new();
+
 		protected TerrainDataFetcher DataFetcher;
+		public TerrainStrategy Strategy;
 
-		public TerrainDataFetcher GetFetcher()
-		{
-			return DataFetcher;
-		}
-
-		public ElevationLayerProperties Properties
-		{
-			get
-			{
-				return _elevationOptions;
-			}
-		}
+		public ElevationLayerProperties Properties => _elevationOptions;
 
 		#region UnityMethods
+
 		private void OnDestroy()
 		{
 			if (DataFetcher != null)
@@ -40,13 +26,20 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 				DataFetcher.FetchingError -= OnDataError;
 			}
 		}
+
 		#endregion
 
+		public TerrainDataFetcher GetFetcher()
+		{
+			return DataFetcher;
+		}
+
 		#region AbstractFactoryOverrides
+
 		protected override void OnInitialized()
 		{
 			Strategy.Initialize(_elevationOptions);
-			DataFetcher = ScriptableObject.CreateInstance<TerrainDataFetcher>();
+			DataFetcher = CreateInstance<TerrainDataFetcher>();
 			DataFetcher.DataRecieved += OnTerrainRecieved;
 			DataFetcher.FetchingError += OnDataError;
 		}
@@ -71,7 +64,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 			if (Strategy is IElevationBasedTerrainStrategy)
 			{
 				tile.HeightDataState = TilePropertyState.Loading;
-				TerrainDataFetcherParameters parameters = new TerrainDataFetcherParameters()
+				var parameters = new TerrainDataFetcherParameters
 				{
 					canonicalTileId = tile.CanonicalTileId,
 					tilesetId = _elevationOptions.sourceOptions.Id,
@@ -91,9 +84,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 		protected override void OnUnregistered(UnityTile tile)
 		{
 			if (_tilesWaitingResponse != null && _tilesWaitingResponse.Contains(tile))
-			{
 				_tilesWaitingResponse.Remove(tile);
-			}
 			Strategy.UnregisterTile(tile);
 		}
 
@@ -115,9 +106,11 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 		protected override void OnUnbindEvents()
 		{
 		}
+
 		#endregion
 
 		#region DataFetcherEvents
+
 		private void OnTerrainRecieved(UnityTile tile, RawPngRasterTile pngRasterTile)
 		{
 			if (tile != null)
@@ -126,11 +119,11 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 
 				if (tile.HeightDataState != TilePropertyState.Unregistered)
 				{
-					tile.SetHeightData(pngRasterTile.Data, _elevationOptions.requiredOptions.exaggerationFactor, _elevationOptions.modificationOptions.useRelativeHeight, _elevationOptions.colliderOptions.addCollider);
+					tile.SetHeightData(pngRasterTile.Data, _elevationOptions.requiredOptions.exaggerationFactor,
+						_elevationOptions.modificationOptions.useRelativeHeight,
+						_elevationOptions.colliderOptions.addCollider);
 					Strategy.RegisterTile(tile);
 				}
-
-
 			}
 		}
 
@@ -147,7 +140,7 @@ namespace Mapbox.Unity.MeshGeneration.Factories
 				}
 			}
 		}
-		#endregion
 
+		#endregion
 	}
 }

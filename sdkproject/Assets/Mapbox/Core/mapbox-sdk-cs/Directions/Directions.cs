@@ -4,20 +4,23 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using System;
+using System.Text;
+using Mapbox.Json;
+using Mapbox.Platform;
+using Mapbox.Utils.JsonConverters;
+
 namespace Mapbox.Directions
 {
-    using System;
-    using System.Text;
-    using Mapbox.Json;
-    using Mapbox.Platform;
-    using Mapbox.Utils.JsonConverters;
-
-    /// <summary>
-    ///     Wrapper around the <see href="https://www.mapbox.com/api-documentation/navigation/#directions">
-    ///     Mapbox Directions API</see>. The Mapbox Directions API will show you how to get where
-    ///     you're going.
-    /// </summary>
-    public sealed class Directions
+	/// <summary>
+	///     Wrapper around the
+	///     <see href="https://www.mapbox.com/api-documentation/navigation/#directions">
+	///         Mapbox Directions API
+	///     </see>
+	///     . The Mapbox Directions API will show you how to get where
+	///     you're going.
+	/// </summary>
+	public sealed class Directions
 	{
 		private readonly IFileSource fileSource;
 
@@ -38,9 +41,9 @@ namespace Mapbox.Directions
 		/// </returns>
 		public IAsyncRequest Query(DirectionResource direction, Action<DirectionsResponse> callback)
 		{
-			return this.fileSource.Request(
+			return fileSource.Request(
 				direction.GetUrl(),
-				(Response response) =>
+				response =>
 				{
 					var str = Encoding.UTF8.GetString(response.Data);
 
@@ -51,10 +54,10 @@ namespace Mapbox.Directions
 		}
 
 		/// <summary>
-		/// Deserialize the geocode response string into a <see cref="DirectionsResponse"/>.
+		///     Deserialize the geocode response string into a <see cref="DirectionsResponse" />.
 		/// </summary>
 		/// <param name="str">JSON String.</param>
-		/// <returns>A <see cref="DirectionsResponse"/>.</returns>
+		/// <returns>A <see cref="DirectionsResponse" />.</returns>
 		public DirectionsResponse Deserialize(string str)
 		{
 			return JsonConvert.DeserializeObject<DirectionsResponse>(str, JsonConverters.Converters);
@@ -64,6 +67,5 @@ namespace Mapbox.Directions
 		{
 			return JsonConvert.SerializeObject(response, JsonConverters.Converters);
 		}
-
 	}
 }

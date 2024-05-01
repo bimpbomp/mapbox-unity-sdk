@@ -1,13 +1,13 @@
+using System;
+
 namespace Mapbox.Unity.Location
 {
-	using System;
-
 	/// <summary>
-	/// Implement ILocationProvider to send Heading and Location updates.
+	///     Implement ILocationProvider to send Heading and Location updates.
 	/// </summary>
 	public interface ILocationProvider
 	{
-		event Action<Location> OnLocationUpdated;
 		Location CurrentLocation { get; }
+		event Action<Location> OnLocationUpdated;
 	}
 }

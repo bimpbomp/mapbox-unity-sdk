@@ -1,9 +1,7 @@
-﻿namespace Mapbox.CheapRulerCs
+﻿using System;
+
+namespace Mapbox.CheapRulerCs
 {
-
-	using System;
-
-
 	public enum CheapRulerUnits
 	{
 		Kilometers,
@@ -17,19 +15,16 @@
 
 	public class CheapRuler
 	{
-
-
-		private double _kx;
-		private double _ky;
+		private readonly double _kx;
+		private readonly double _ky;
 
 
 		/// <summary>
-		/// Creates a ruler object that will approximate measurements around the given latitude. Units are one of: kilometers
+		///     Creates a ruler object that will approximate measurements around the given latitude. Units are one of: kilometers
 		/// </summary>
 		/// <param name="outputUnits"></param>
 		public CheapRuler(double latitude, CheapRulerUnits outputUnits = CheapRulerUnits.Kilometers)
 		{
-
 			double factor;
 
 			switch (outputUnits)
@@ -73,7 +68,7 @@
 
 
 		/// <summary>
-		/// Creates a ruler object from tile coordinates.
+		///     Creates a ruler object from tile coordinates.
 		/// </summary>
 		/// <param name="y">Y TileId</param>
 		/// <param name="z">Zoom Level</param>
@@ -88,7 +83,7 @@
 
 
 		/// <summary>
-		/// Given two points returns the distance.
+		///     Given two points returns the distance.
 		/// </summary>
 		/// <param name="a">point [longitude, latitude]</param>
 		/// <param name="b">point [longitude, latitude]</param>
@@ -102,7 +97,7 @@
 
 
 		/// <summary>
-		/// Returns the bearing between two points in angles.
+		///     Returns the bearing between two points in angles.
 		/// </summary>
 		/// <param name="a">a point [longitude, latitude]</param>
 		/// <param name="b">b point [longitude, latitude]</param>
@@ -111,21 +106,15 @@
 		{
 			var dx = (b[0] - a[0]) * _kx;
 			var dy = (b[1] - a[1]) * _ky;
-			if (dx == 0 && dy == 0)
-			{
-				return 0;
-			}
+			if (dx == 0 && dy == 0) return 0;
 			var bearing = Math.Atan2(dx, dy) * 180 / Math.PI;
-			if (bearing > 180)
-			{
-				bearing -= 360;
-			}
+			if (bearing > 180) bearing -= 360;
 			return bearing;
 		}
 
 
 		/// <summary>
-		/// Returns a new point given distance and bearing from the starting point.
+		///     Returns a new point given distance and bearing from the starting point.
 		/// </summary>
 		/// <param name="p"></param>
 		/// <param name="distance"></param>
@@ -143,7 +132,7 @@
 
 
 		/// <summary>
-		/// Returns a new point given easting and northing offsets (in ruler units) from the starting point.
+		///     Returns a new point given easting and northing offsets (in ruler units) from the starting point.
 		/// </summary>
 		/// <param name="p">point [longitude, latitude]</param>
 		/// <param name="dx">dx easting</param>
@@ -151,14 +140,7 @@
 		/// <returns>point [longitude, latitude]</returns>
 		private double[] offset(double[] p, double dx, double dy)
 		{
-			return new double[]
-			{
-				p[0] + dx / _kx,
-				p[1] + dy / _ky
-			};
+			return new[] { p[0] + dx / _kx, p[1] + dy / _ky };
 		}
-
-
-
 	}
 }

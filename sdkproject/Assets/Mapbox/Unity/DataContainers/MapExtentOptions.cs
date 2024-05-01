@@ -1,13 +1,12 @@
-﻿namespace Mapbox.Unity.Map
-{
-	using System;
-	using UnityEngine;
+﻿using System;
 
+namespace Mapbox.Unity.Map
+{
 	[Serializable]
 	public class MapExtentOptions : MapboxDataProperty
 	{
 		public MapExtentType extentType = MapExtentType.CameraBounds;
-		public DefaultMapExtents defaultExtents = new DefaultMapExtents();
+		public DefaultMapExtents defaultExtents = new();
 
 		public MapExtentOptions(MapExtentType type)
 		{
@@ -16,7 +15,7 @@
 
 		public ExtentOptions GetTileProviderOptions()
 		{
-			ExtentOptions options = new ExtentOptions();
+			var options = new ExtentOptions();
 			switch (extentType)
 			{
 				case MapExtentType.CameraBounds:
@@ -28,9 +27,8 @@
 				case MapExtentType.RangeAroundTransform:
 					options = defaultExtents.rangeAroundTransformOptions;
 					break;
-				default:
-					break;
 			}
+
 			return options;
 		}
 	}
@@ -39,8 +37,8 @@
 	[Serializable]
 	public class DefaultMapExtents : MapboxDataProperty
 	{
-		public CameraBoundsTileProviderOptions cameraBoundsOptions = new CameraBoundsTileProviderOptions();
-		public RangeTileProviderOptions rangeAroundCenterOptions = new RangeTileProviderOptions();
-		public RangeAroundTransformTileProviderOptions rangeAroundTransformOptions = new RangeAroundTransformTileProviderOptions();
+		public CameraBoundsTileProviderOptions cameraBoundsOptions = new();
+		public RangeTileProviderOptions rangeAroundCenterOptions = new();
+		public RangeAroundTransformTileProviderOptions rangeAroundTransformOptions = new();
 	}
 }

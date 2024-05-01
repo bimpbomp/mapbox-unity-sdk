@@ -1,67 +1,42 @@
-﻿namespace Mapbox.Editor
-{
-	using UnityEngine;
-	using UnityEditor;
-	using System.Collections.Generic;
-	using System;
-	using System.Linq;
-	using Mapbox.Unity.Map;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Mapbox.Unity.Map;
+using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
+namespace Mapbox.Editor
+{
 	public class ScriptableCreatorWindow : EditorWindow
 	{
-		Type _type;
-		SerializedProperty _finalize;
-		SerializedProperty _container;
-		const float width = 620f;
-		const float height = 600f;
-		List<ScriptableObject> _assets;
-		bool[] _showElement;
-		Vector2 scrollPos;
-		int _index = -1;
-		private Action<UnityEngine.Object> _act;
-		int activeIndex = 0;
+		private const float width = 620f;
+		private const float height = 600f;
+		private System.Action<Object> _act;
+		private List<ScriptableObject> _assets;
+		private SerializedProperty _container;
+		private SerializedProperty _finalize;
+		private int _index = -1;
+		private bool[] _showElement;
+		private Type _type;
+		private int activeIndex;
+		private GUIStyle header;
 
-		GUIStyle headerFoldout = new GUIStyle("Foldout");
-		GUIStyle header;
+		private readonly GUIStyle headerFoldout = new("Foldout");
+		private Vector2 scrollPos;
 
-		void OnEnable()
+		private void OnEnable()
 		{
 			EditorApplication.playModeStateChanged += OnModeChanged;
 		}
 
-		void OnDisable()
+		private void OnDisable()
 		{
 			EditorApplication.playModeStateChanged -= OnModeChanged;
 		}
 
-		void OnModeChanged(PlayModeStateChange state)
-		{
-			Close();
-		}
-
-		public static void Open(Type type, SerializedProperty p, int index = -1, Action<UnityEngine.Object> act = null, SerializedProperty containerProperty = null)
-		{
-			var window = GetWindow<ScriptableCreatorWindow>(true, "Select a module");
-			window._type = type;
-			window._finalize = p;
-			window._container = containerProperty;
-			window.position = new Rect(500, 200, width, height);
-			window._act = act;
-			if (index > -1)
-			{
-				window._index = index;
-			}
-
-			window.header = new GUIStyle("ShurikenModuleTitle")
-			{
-				font = (new GUIStyle("Label")).font,
-				border = new RectOffset(15, 7, 4, 4),
-				fixedHeight = 22,
-				contentOffset = new Vector2(20f, -2f)
-			};
-		}
-
-		void OnGUI()
+		private void OnGUI()
 		{
 			if (_assets == null || _assets.Count == 0)
 			{
@@ -73,13 +48,14 @@
 					var asset = AssetDatabase.LoadAssetAtPath(ne, _type) as ScriptableObject;
 					_assets.Add(asset);
 				}
+
 				_assets = _assets.OrderBy(x => x.GetType().Name).ThenBy(x => x.name).ToList();
 			}
 
 			var st = new GUIStyle();
 			st.padding = new RectOffset(15, 15, 15, 15);
 			scrollPos = EditorGUILayout.BeginScrollView(scrollPos, st);
-			for (int i = 0; i < _assets.Count; i++)
+			for (var i = 0; i < _assets.Count; i++)
 			{
 				var asset = _assets[i];
 				if (asset == null) //yea turns out this can happen
@@ -111,13 +87,10 @@
 						}
 					}
 
-					MapboxDataProperty mapboxDataProperty = (MapboxDataProperty)EditorHelper.GetTargetObjectOfProperty(_container);
-					if (mapboxDataProperty != null)
-					{
-						mapboxDataProperty.HasChanged = true;
-					}
+					var mapboxDataProperty = (MapboxDataProperty)EditorHelper.GetTargetObjectOfProperty(_container);
+					if (mapboxDataProperty != null) mapboxDataProperty.HasChanged = true;
 
-					this.Close();
+					Close();
 				}
 
 				GUILayout.EndHorizontal();
@@ -133,26 +106,51 @@
 					EditorGUI.indentLevel -= 4;
 					EditorGUILayout.Space();
 				}
+
 				EditorGUILayout.Space();
 			}
+
 			EditorGUILayout.EndScrollView();
+		}
+
+		private void OnModeChanged(PlayModeStateChange state)
+		{
+			Close();
+		}
+
+		public static void Open(Type type, SerializedProperty p, int index = -1, Action<Object> act = null,
+			SerializedProperty containerProperty = null)
+		{
+			var window = GetWindow<ScriptableCreatorWindow>(true, "Select a module");
+			window._type = type;
+			window._finalize = p;
+			window._container = containerProperty;
+			window.position = new Rect(500, 200, width, height);
+			window._act = act;
+			if (index > -1) window._index = index;
+
+			window.header = new GUIStyle("ShurikenModuleTitle")
+			{
+				font = new GUIStyle("Label").font,
+				border = new RectOffset(15, 7, 4, 4),
+				fixedHeight = 22,
+				contentOffset = new Vector2(20f, -2f)
+			};
 		}
 
 		public static T CreateAsset<T>() where T : ScriptableObject
 		{
-			T asset = ScriptableObject.CreateInstance<T>();
+			var asset = CreateInstance<T>();
 
-			string path = AssetDatabase.GetAssetPath(Selection.activeObject);
+			var path = AssetDatabase.GetAssetPath(Selection.activeObject);
 			if (path == "")
-			{
 				path = "Assets";
-			}
-			else if (System.IO.Path.GetExtension(path) != "")
-			{
-				path = path.Replace(System.IO.Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
-			}
+			else if (Path.GetExtension(path) != "")
+				path = path.Replace(Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
 
-			string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "/" + Selection.activeObject.name + "_" + typeof(T).Name + ".asset");
+			var assetPathAndName =
+				AssetDatabase.GenerateUniqueAssetPath(path + "/" + Selection.activeObject.name + "_" + typeof(T).Name +
+				                                      ".asset");
 
 			AssetDatabase.CreateAsset(asset, assetPathAndName);
 
@@ -177,14 +175,12 @@
 				headerFoldout.Draw(foldoutRect, false, false, show, false);
 
 			if (e.type == EventType.MouseDown)
-			{
 				if (rect.Contains(e.mousePosition))
 				{
 					show = !show;
 
 					e.Use();
 				}
-			}
 
 			return show;
 		}

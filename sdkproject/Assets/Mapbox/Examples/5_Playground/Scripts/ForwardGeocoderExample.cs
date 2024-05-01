@@ -4,38 +4,34 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+using Mapbox.Geocoding;
+using Mapbox.Json;
+using Mapbox.Utils.JsonConverters;
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace Mapbox.Examples.Playground
 {
-	using UnityEngine;
-	using UnityEngine.UI;
-	using Mapbox.Json;
-	using Mapbox.Utils.JsonConverters;
-	using Mapbox.Geocoding;
-
 	public class ForwardGeocoderExample : MonoBehaviour
-    {
-        [SerializeField]
-        ForwardGeocodeUserInput _searchLocation;
+	{
+		[SerializeField] private ForwardGeocodeUserInput _searchLocation;
 
-        [SerializeField]
-        Text _resultsText;
+		[SerializeField] private Text _resultsText;
 
-        void Awake()
-        {
-            _searchLocation.OnGeocoderResponse += SearchLocation_OnGeocoderResponse;
-        }
+		private void Awake()
+		{
+			_searchLocation.OnGeocoderResponse += SearchLocation_OnGeocoderResponse;
+		}
 
-        void OnDestroy()
-        {
-            if (_searchLocation != null)
-            {
-                _searchLocation.OnGeocoderResponse -= SearchLocation_OnGeocoderResponse;
-            }
-        }
+		private void OnDestroy()
+		{
+			if (_searchLocation != null) _searchLocation.OnGeocoderResponse -= SearchLocation_OnGeocoderResponse;
+		}
 
-        void SearchLocation_OnGeocoderResponse(ForwardGeocodeResponse response)
-        {
-            _resultsText.text = JsonConvert.SerializeObject(_searchLocation.Response, Formatting.Indented, JsonConverters.Converters);
-        }
-    }
+		private void SearchLocation_OnGeocoderResponse(ForwardGeocodeResponse response)
+		{
+			_resultsText.text = JsonConvert.SerializeObject(_searchLocation.Response, Formatting.Indented,
+				JsonConverters.Converters);
+		}
+	}
 }

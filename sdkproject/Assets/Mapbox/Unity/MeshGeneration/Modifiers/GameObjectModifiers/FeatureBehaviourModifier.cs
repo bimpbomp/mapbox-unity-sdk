@@ -1,10 +1,10 @@
-﻿namespace Mapbox.Unity.MeshGeneration.Modifiers
-{
-	using Mapbox.Unity.MeshGeneration.Data;
-	using Mapbox.Unity.MeshGeneration.Components;
-	using UnityEngine;
-	using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Mapbox.Unity.MeshGeneration.Components;
+using Mapbox.Unity.MeshGeneration.Data;
+using UnityEngine;
 
+namespace Mapbox.Unity.MeshGeneration.Modifiers
+{
 	[CreateAssetMenu(menuName = "Mapbox/Modifiers/Add Feature Behaviour Modifier")]
 	public class FeatureBehaviourModifier : GameObjectModifier
 	{
@@ -13,10 +13,7 @@
 
 		public override void Initialize()
 		{
-			if (_features == null)
-			{
-				_features = new Dictionary<GameObject, FeatureBehaviour>();
-			}
+			if (_features == null) _features = new Dictionary<GameObject, FeatureBehaviour>();
 		}
 
 		public override void Run(VectorEntity ve, UnityTile tile)

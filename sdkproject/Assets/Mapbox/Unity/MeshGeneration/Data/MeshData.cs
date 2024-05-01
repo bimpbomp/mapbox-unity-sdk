@@ -1,22 +1,21 @@
+using System.Collections.Generic;
+using Mapbox.Utils;
+using UnityEngine;
+
 namespace Mapbox.Unity.MeshGeneration.Data
 {
-	using System;
-	using System.Collections.Generic;
-	using UnityEngine;
-	using Utils;
-
 	// TODO: Do we need this class? Why not just use `Mesh`?
 	public class MeshData
 	{
-		public Vector3 PositionInTile;
 		public List<int> Edges;
 		public Vector2 MercatorCenter;
-		public RectD TileRect;
-		public List<Vector3> Vertices;
 		public List<Vector3> Normals;
+		public Vector3 PositionInTile;
 		public List<Vector4> Tangents;
+		public RectD TileRect;
 		public List<List<int>> Triangles;
 		public List<List<Vector2>> UV;
+		public List<Vector3> Vertices;
 
 		public MeshData()
 		{
@@ -36,14 +35,8 @@ namespace Mapbox.Unity.MeshGeneration.Data
 			Normals.Clear();
 			Tangents.Clear();
 
-			foreach (var item in Triangles)
-			{
-				item.Clear();
-			}
-			foreach (var item in UV)
-			{
-				item.Clear();
-			}
+			foreach (var item in Triangles) item.Clear();
+			foreach (var item in UV) item.Clear();
 		}
 	}
 }

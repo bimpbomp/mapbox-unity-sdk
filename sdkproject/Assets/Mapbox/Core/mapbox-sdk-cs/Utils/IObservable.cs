@@ -16,10 +16,10 @@ namespace Mapbox.Utils
 	{
 		/// <summary> Add an <see cref="T:IObserver" /> to the observer list. </summary>
 		/// <param name="observer"> The object subscribing to events. </param>
-		void Subscribe(Mapbox.Utils.IObserver<T> observer);
+		void Subscribe(IObserver<T> observer);
 
 		/// <summary> Remove an <see cref="T:IObserver" /> to the observer list. </summary>
 		/// <param name="observer"> The object unsubscribing to events. </param>
-        void Unsubscribe(Mapbox.Utils.IObserver<T> observer);
+		void Unsubscribe(IObserver<T> observer);
 	}
 }

@@ -14,19 +14,14 @@ namespace Mapbox.Unity.Map.TileProviders
 
 	public abstract class AbstractTileProvider : MonoBehaviour, ITileProvider
 	{
-		public event EventHandler<ExtentArgs> ExtentChanged;
+		protected ExtentArgs _currentExtent = new();
 
 		protected IMap _map;
-		protected ExtentArgs _currentExtent = new ExtentArgs();
 
 		protected ITileProviderOptions _options;
-		public ITileProviderOptions Options
-		{
-			get
-			{
-				return _options;
-			}
-		}
+		public event EventHandler<ExtentArgs> ExtentChanged;
+
+		public ITileProviderOptions Options => _options;
 
 		public virtual void Initialize(IMap map)
 		{
@@ -34,12 +29,14 @@ namespace Mapbox.Unity.Map.TileProviders
 			OnInitialized();
 		}
 
+		public virtual void SetOptions(ITileProviderOptions options)
+		{
+			_options = options;
+		}
+
 		public virtual void OnExtentChanged()
 		{
-			if (ExtentChanged != null)
-			{
-				ExtentChanged(this, _currentExtent);
-			}
+			if (ExtentChanged != null) ExtentChanged(this, _currentExtent);
 		}
 
 		public abstract void OnInitialized();
@@ -47,14 +44,8 @@ namespace Mapbox.Unity.Map.TileProviders
 
 		public abstract bool Cleanup(UnwrappedTileId tile);
 
-		public virtual void SetOptions(ITileProviderOptions options)
-		{
-			_options = options;
-		}
-
 		public virtual void UpdateTileProvider()
 		{
-
 		}
 	}
 }
